@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>酒帖 — 日本酒リスト</title>
+<title>酒帖 — 日本酒リスト・在庫管理</title>
 <meta name="theme-color" content="#101317">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,240 +16,244 @@
   --sumi:#101317; --sumi2:#171B21; --sumi3:#1F242C; --line:#2C333D;
   --washi:#EFE9DC; --dim:#9C9686; --dim2:#6E6A60;
   --ai:#4C82C3; --beni:#C2536B; --kin:#C9A227; --sugi:#5C7F60;
-  --disp:"Shippori Mincho B1", "Yu Mincho", "Hiragino Mincho ProN", serif;
-  --body:"Zen Kaku Gothic New", -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-  --rail:44px;
+  --disp:"Shippori Mincho B1","Yu Mincho","Hiragino Mincho ProN",serif;
+  --body:"Zen Kaku Gothic New",-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  --rail:40px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{
-  background:var(--sumi); color:var(--washi); font-family:var(--body);
-  -webkit-text-size-adjust:100%; line-height:1.6;
-  padding-right:calc(var(--rail) + env(safe-area-inset-right));
-}
+body{background:var(--sumi);color:var(--washi);font-family:var(--body);line-height:1.6;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--ai); outline-offset:2px}
+:focus-visible{outline:2px solid var(--ai);outline-offset:2px}
+[hidden]{display:none !important}
 
-/* ---- header ---- */
-header{
-  position:sticky; top:0; z-index:30; background:rgba(16,19,23,.94);
-  backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
-  padding:10px 14px calc(10px + env(safe-area-inset-bottom,0)*0) 14px;
-  padding-top:calc(10px + env(safe-area-inset-top));
-}
-.brand{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
-.brand h1{
-  font-family:var(--disp); font-weight:700; font-size:23px; letter-spacing:.22em;
-  margin:0; line-height:1;
-}
-.brand .sub{font-size:10px;color:var(--dim2);letter-spacing:.16em}
-.searchrow{display:flex;gap:8px}
-.search{
-  flex:1; display:flex; align-items:center; gap:8px; background:var(--sumi2);
-  border:1px solid var(--line); border-radius:2px; padding:0 10px;
-}
-.search input{flex:1;background:none;border:0;padding:11px 0;font-size:15px}
-.search input::placeholder{color:var(--dim2)}
-.search .x{background:none;border:0;color:var(--dim);font-size:18px;padding:4px}
-.iconbtn{
-  background:var(--sumi2); border:1px solid var(--line); border-radius:2px;
-  color:var(--washi); padding:0 13px; font-size:12.5px; letter-spacing:.08em; white-space:nowrap;
-}
-.iconbtn[aria-expanded="true"]{background:var(--ai);border-color:var(--ai);color:#0B1016;font-weight:700}
+/* ---------- ログイン ---------- */
+#gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+.gatebox{width:min(400px,100%)}
+.gatebox .logo{font-family:var(--disp);font-size:32px;letter-spacing:.3em;text-align:center;margin-bottom:4px}
+.gatebox .tag{text-align:center;font-size:10px;letter-spacing:.2em;color:var(--dim2);margin-bottom:26px}
+.gatebox .panel{background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:18px}
+.gatebox h2{font-family:var(--disp);font-size:15px;letter-spacing:.16em;margin:0 0 14px;font-weight:500}
+.msg{font-size:12.5px;margin-top:10px;color:var(--beni);min-height:1.2em}
+.msg.ok{color:var(--sugi)}
 
-/* ---- filters ---- */
-.filters{display:none;padding-top:12px}
-.filters.open{display:block}
-.fgroup{margin-bottom:12px}
-.flabel{font-size:10.5px;letter-spacing:.18em;color:var(--dim2);margin-bottom:6px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{
-  background:transparent;border:1px solid var(--line);color:var(--dim);
-  padding:5px 10px;border-radius:2px;font-size:12.5px;
-}
-.chip[aria-pressed="true"]{background:var(--washi);border-color:var(--washi);color:var(--sumi);font-weight:700}
-.selects{display:flex;gap:8px;flex-wrap:wrap}
-select{
-  background:var(--sumi2);border:1px solid var(--line);border-radius:2px;
-  padding:8px 10px;font-size:13px;flex:1;min-width:130px;
-}
-.fbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:2px}
-.count{font-size:11.5px;color:var(--dim2);letter-spacing:.08em}
-.txtbtn{background:none;border:0;color:var(--ai);font-size:12.5px;padding:4px 0}
-
-/* ---- 五十音 rail ---- */
-.rail{
-  position:fixed; top:0; right:0; bottom:0; width:var(--rail);
-  display:flex; flex-direction:column; justify-content:center; gap:2px;
-  padding:0 4px calc(env(safe-area-inset-bottom)) 4px;
-  background:linear-gradient(to left, rgba(23,27,33,.96), rgba(23,27,33,.7));
-  border-left:1px solid var(--line); z-index:25;
-}
-.rail button{
-  background:none;border:0;color:var(--dim2);font-family:var(--disp);
-  font-size:14px;padding:3px 0;border-radius:2px;
-}
-.rail button.on{color:var(--washi)}
-.rail button:active{background:var(--ai);color:#0B1016}
-
-/* ---- list ---- */
-main{padding:14px 14px 60px 14px;max-width:820px;margin:0 auto}
-.gyo{
-  position:sticky; top:0; z-index:10; margin:22px 0 10px;
-  display:flex; align-items:center; gap:10px;
-  background:linear-gradient(to bottom, var(--sumi) 60%, transparent);
-  padding:6px 0 8px;
-}
-.gyo b{font-family:var(--disp);font-size:19px;letter-spacing:.2em;font-weight:700}
-.gyo .rule{flex:1;height:1px;background:var(--line)}
-.gyo em{font-style:normal;font-size:11px;color:var(--dim2)}
-
-.card{
-  background:var(--sumi2); border:1px solid var(--line); border-left:2px solid var(--line);
-  border-radius:2px; margin-bottom:8px; overflow:hidden;
-}
-.card.open{border-left-color:var(--ai)}
-.chead{width:100%;background:none;border:0;text-align:left;padding:13px 14px;display:block}
-.ctop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
-.cname{font-family:var(--disp);font-size:19px;font-weight:700;letter-spacing:.05em}
-.ckana{font-size:10.5px;color:var(--dim2);letter-spacing:.12em}
-.cmeta{font-size:12px;color:var(--dim);margin-top:3px}
-.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.tag{
-  font-size:10.5px;letter-spacing:.06em;padding:2px 7px;border:1px solid var(--line);
-  color:var(--dim);border-radius:1px;
-}
-.tag.k{color:var(--kin);border-color:#6A5A1A}
-.tag.mine{color:var(--sugi);border-color:#33482F}
-
-/* 甘辛メーター（署名要素） */
-.meter{margin-top:11px}
-.mscale{position:relative;height:16px}
-.mticks{position:absolute;inset:auto 0 0 0;display:flex;gap:0}
-.mticks i{flex:1;border-left:1px solid var(--line);height:6px;display:block}
-.mticks i:first-child{border-left:0}
-.mbar{
-  position:absolute;left:0;right:0;bottom:0;height:2px;
-  background:linear-gradient(90deg,var(--beni),#7A6070 45%,#3E5E86 62%,var(--ai));
-  opacity:.5;
-}
-.mpin{
-  position:absolute;bottom:-3px;width:9px;height:9px;margin-left:-4.5px;
-  border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
-  background:var(--washi);box-shadow:0 0 0 3px var(--sumi2);
-}
-.mlab{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim2);letter-spacing:.14em;margin-top:6px}
-.mlab b{color:var(--washi);font-weight:500;letter-spacing:.04em}
-
-/* detail */
-.cbody{display:none;padding:0 14px 14px}
-.card.open .cbody{display:block}
-.spec{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:2px 0 12px}
-.spec div{background:var(--sumi2);padding:9px 11px}
-.spec dt{font-size:10px;color:var(--dim2);letter-spacing:.14em;margin:0 0 3px}
-.spec dd{margin:0;font-size:14.5px;font-variant-numeric:tabular-nums}
-.prices{margin:0 0 12px;border-top:1px solid var(--line)}
-.prices li{list-style:none;display:flex;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
-.prices .v{color:var(--dim)}
-.prices .p{font-variant-numeric:tabular-nums}
-.prices .p.rare{color:var(--kin)}
-.desc{font-size:14px;color:#DCD6C8;margin:0 0 12px}
-.rowbtns{display:flex;gap:8px}
-.rowbtns button{background:var(--sumi3);border:1px solid var(--line);border-radius:2px;padding:8px 12px;font-size:12.5px;color:var(--dim)}
-
-.empty{text-align:center;color:var(--dim2);padding:70px 20px;font-size:14px}
-.empty b{display:block;font-family:var(--disp);font-size:17px;color:var(--washi);margin-bottom:8px}
-
-/* ---- footer / dialogs ---- */
-footer{border-top:1px solid var(--line);padding:20px 14px 40px;max-width:820px;margin:0 auto;color:var(--dim2);font-size:11.5px;line-height:1.9}
-footer .fbtns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-dialog{
-  border:1px solid var(--line);background:var(--sumi2);color:var(--washi);
-  border-radius:3px;padding:0;width:min(560px,94vw);max-height:86vh;
-}
-dialog::backdrop{background:rgba(8,10,13,.78)}
-.dhead{display:flex;justify-content:space-between;align-items:center;padding:14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--sumi2)}
-.dhead h2{font-family:var(--disp);font-size:17px;margin:0;letter-spacing:.14em}
-.dbody{padding:14px;overflow:auto;max-height:70vh}
+/* ---------- 共通フォーム ---------- */
 .field{margin-bottom:11px}
-.field label{display:block;font-size:10.5px;letter-spacing:.14em;color:var(--dim2);margin-bottom:5px}
-.field input,.field textarea,.field select{
-  width:100%;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:9px 10px;font-size:14px;
-}
-.two{display:flex;gap:9px}
-.two>*{flex:1}
-.primary{background:var(--washi);color:var(--sumi);border:0;border-radius:2px;padding:11px 16px;font-weight:700;font-size:14px;width:100%}
-.steps{counter-reset:s;padding-left:0;margin:0 0 16px}
-.steps li{list-style:none;font-size:13px;color:#CFC9BC;padding:7px 0 7px 26px;position:relative;border-bottom:1px solid var(--line)}
-.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:8px;font-family:var(--disp);color:var(--ai);font-size:12px}
-.note{font-size:12px;color:var(--dim2);margin-top:10px}
-h3.dt{font-family:var(--disp);font-size:14px;letter-spacing:.14em;margin:18px 0 8px;color:var(--washi)}
-h3.dt:first-child{margin-top:0}
+.field label{display:block;font-size:10px;letter-spacing:.14em;color:var(--dim2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:10px;font-size:15px}
+.primary{background:var(--washi);color:var(--sumi);border:0;border-radius:2px;padding:12px 16px;font-weight:700;font-size:14.5px;width:100%}
+.primary:disabled{opacity:.45}
+.ghost{background:var(--sumi3);border:1px solid var(--line);border-radius:2px;padding:9px 12px;font-size:12.5px;color:var(--washi)}
+.danger{color:var(--beni);border-color:#5A2C36}
+.two{display:flex;gap:9px}.two>*{flex:1}
 
-/* 在庫 */
-.modebar{display:flex;gap:6px;margin-top:9px}
-.modebar button{flex:1;background:var(--sumi2);border:1px solid var(--line);color:var(--dim);
-  padding:8px 4px;border-radius:2px;font-size:12.5px;letter-spacing:.06em}
-.modebar button[aria-pressed="true"]{background:var(--washi);border-color:var(--washi);color:var(--sumi);font-weight:700}
-.invsum{display:none;gap:0;margin-top:9px;border:1px solid var(--line);border-radius:2px;overflow:hidden}
-.invsum.on{display:flex}
-.invsum div{flex:1;padding:7px 9px;background:var(--sumi2);border-left:1px solid var(--line)}
+/* ---------- ヘッダー ---------- */
+header{position:sticky;top:0;z-index:30;background:rgba(16,19,23,.95);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:calc(9px + env(safe-area-inset-top)) 12px 9px}
+.hrow{display:flex;align-items:center;gap:8px}
+.hrow h1{font-family:var(--disp);font-size:19px;letter-spacing:.2em;margin:0;line-height:1}
+#accsel{flex:1;background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:7px 8px;font-size:13px;min-width:0}
+.who{font-size:10px;color:var(--dim2);letter-spacing:.06em;text-align:right;white-space:nowrap}
+.who b{display:block;color:var(--washi);font-size:11.5px;font-weight:500;letter-spacing:.04em}
+.lock{background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:7px 9px;font-size:11.5px;color:var(--dim)}
+.searchrow{display:flex;gap:8px;margin-top:9px}
+.search{flex:1;display:flex;align-items:center;gap:8px;background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:0 10px}
+.search input{flex:1;background:none;border:0;padding:10px 0;font-size:15px}
+.search .x{background:none;border:0;color:var(--dim);font-size:18px;padding:4px}
+.iconbtn{background:var(--sumi2);border:1px solid var(--line);border-radius:2px;color:var(--washi);padding:0 12px;font-size:12.5px;white-space:nowrap}
+.iconbtn[aria-expanded="true"]{background:var(--ai);border-color:var(--ai);color:#0B1016;font-weight:700}
+.filters{display:none;padding-top:11px}
+.filters.open{display:block}
+.fgroup{margin-bottom:11px}
+.flabel{font-size:10px;letter-spacing:.16em;color:var(--dim2);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:transparent;border:1px solid var(--line);color:var(--dim);padding:5px 10px;border-radius:2px;font-size:12.5px}
+.chip[aria-pressed="true"]{background:var(--washi);border-color:var(--washi);color:var(--sumi);font-weight:700}
+.rangerow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.rangerow input{width:74px;background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:8px;font-size:15px;text-align:center;font-variant-numeric:tabular-nums}
+.rangerow span{font-size:12px;color:var(--dim2)}
+.selects{display:flex;gap:8px;flex-wrap:wrap}
+.selects select{background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:8px 10px;font-size:13px;flex:1;min-width:130px}
+.fbar{display:flex;justify-content:space-between;align-items:center}
+.count{font-size:11.5px;color:var(--dim2)}
+.txtbtn{background:none;border:0;color:var(--ai);font-size:12.5px;padding:4px 0}
+.invsum{display:flex;margin-top:9px;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.invsum div{flex:1;padding:6px 8px;background:var(--sumi2);border-left:1px solid var(--line)}
 .invsum div:first-child{border-left:0}
-.invsum dt{font-size:9.5px;letter-spacing:.14em;color:var(--dim2);margin:0 0 2px}
-.invsum dd{margin:0;font-size:15px;font-variant-numeric:tabular-nums}
+.invsum dt{font-size:9px;letter-spacing:.12em;color:var(--dim2);margin:0 0 2px}
+.invsum dd{margin:0;font-size:14.5px;font-variant-numeric:tabular-nums}
 .invsum dd.warn{color:var(--kin)}
-.stock{display:inline-flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.08em;
-  border:1px solid var(--sugi);color:#8FB292;padding:2px 7px;border-radius:1px}
+
+/* ---------- 五十音 ---------- */
+.rail{position:fixed;top:0;right:0;bottom:64px;width:var(--rail);display:flex;flex-direction:column;
+  justify-content:center;gap:1px;padding:0 3px;background:linear-gradient(to left,rgba(23,27,33,.96),rgba(23,27,33,.6));
+  border-left:1px solid var(--line);z-index:25}
+.rail button{background:none;border:0;color:var(--dim2);font-family:var(--disp);font-size:13px;padding:2px 0}
+.rail button.on{color:var(--washi)}
+
+/* ---------- 本体 ---------- */
+main{padding:12px 12px calc(84px + env(safe-area-inset-bottom));max-width:860px;margin:0 auto}
+main.hasrail{padding-right:calc(var(--rail) + 10px)}
+.gyo{position:sticky;top:0;z-index:10;margin:20px 0 9px;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(to bottom,var(--sumi) 60%,transparent);padding:6px 0 8px}
+.gyo b{font-family:var(--disp);font-size:18px;letter-spacing:.2em}
+.gyo .rule{flex:1;height:1px;background:var(--line)}
+.card{background:var(--sumi2);border:1px solid var(--line);border-left:2px solid var(--line);border-radius:2px;margin-bottom:8px;overflow:hidden}
+.card.open{border-left-color:var(--ai)}
+.card.sel{border-left-color:var(--kin)}
+.chead{width:100%;background:none;border:0;text-align:left;padding:12px 13px;display:block}
+.ctop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cname{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:.04em}
+.ckana{font-size:10px;color:var(--dim2);letter-spacing:.1em}
+.cmeta{font-size:11.5px;color:var(--dim);margin-top:3px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.tag{font-size:10px;padding:2px 7px;border:1px solid var(--line);color:var(--dim);border-radius:1px}
+.tag.k{color:var(--kin);border-color:#6A5A1A}
+.tag.m{color:var(--sugi);border-color:#33482F}
+.stock{display:inline-flex;font-size:11px;border:1px solid var(--sugi);color:#8FB292;padding:1px 7px;border-radius:1px}
 .stock.zero{border-color:var(--line);color:var(--dim2)}
 .stock.low{border-color:var(--kin);color:var(--kin)}
-.tmini{width:40px;height:40px;object-fit:cover;border:1px solid var(--line);margin-left:auto;border-radius:1px}
+.tmini{width:38px;height:38px;object-fit:cover;border:1px solid var(--line);margin-left:auto}
+.pick{width:20px;height:20px;accent-color:var(--kin);margin-right:2px;flex:none}
+.meter{margin-top:10px}
+.mscale{position:relative;height:15px}
+.mticks{position:absolute;inset:auto 0 0 0;display:flex}
+.mticks i{flex:1;border-left:1px solid var(--line);height:6px}
+.mticks i:first-child{border-left:0}
+.mbar{position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--beni),#7A6070 45%,#3E5E86 62%,var(--ai));opacity:.5}
+.mpin{position:absolute;bottom:-3px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%/60% 60% 40% 40%;background:var(--washi);box-shadow:0 0 0 3px var(--sumi2)}
+.mlab{display:flex;justify-content:space-between;font-size:9px;color:var(--dim2);letter-spacing:.12em;margin-top:5px}
+.mlab b{color:var(--washi);font-weight:500}
+.cbody{display:none;padding:0 13px 13px}
+.card.open .cbody{display:block}
+.spec{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:2px 0 11px}
+.spec div{background:var(--sumi2);padding:8px 10px}
+.spec dt{font-size:9.5px;color:var(--dim2);letter-spacing:.13em;margin:0 0 3px}
+.spec dd{margin:0;font-size:14px;font-variant-numeric:tabular-nums}
+.prices{margin:0 0 11px;padding:0;border-top:1px solid var(--line)}
+.prices li{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
+.prices .v{color:var(--dim)}
+.prices .p.rare{color:var(--kin)}
 .stepper{display:flex;align-items:center;gap:6px}
-.stepper button{width:32px;height:32px;background:var(--sumi3);border:1px solid var(--line);
-  border-radius:2px;color:var(--washi);font-size:16px;line-height:1;padding:0}
-.qty{min-width:2.4em;text-align:center;font-variant-numeric:tabular-nums;font-size:16px}
-.invgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
-.invgrid label{display:block;font-size:9.5px;letter-spacing:.13em;color:var(--dim2);margin-bottom:4px}
+.stepper button{width:32px;height:32px;background:var(--sumi3);border:1px solid var(--line);border-radius:2px;font-size:16px;line-height:1;padding:0}
+.qty{min-width:2.2em;text-align:center;font-variant-numeric:tabular-nums;font-size:16px}
+.invgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 11px}
+.invgrid label{display:block;font-size:9.5px;letter-spacing:.12em;color:var(--dim2);margin-bottom:4px}
 .invgrid input{width:100%;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:7px 8px;font-size:13.5px}
-.invgrid .wide{grid-column:1 / -1}
-.thumb{width:100%;max-height:230px;object-fit:contain;background:var(--sumi);border:1px solid var(--line);display:block;margin-bottom:10px}
-.hint{font-size:12px;color:var(--dim2);line-height:1.8;background:var(--sumi);border:1px solid var(--line);padding:10px;border-radius:2px}
+.invgrid .wide{grid-column:1/-1}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);margin-bottom:11px}
+.toggle input{width:18px;height:18px;accent-color:var(--sugi)}
+.desc{font-size:13.5px;color:#DCD6C8;margin:0 0 11px}
+.rowbtns{display:flex;flex-wrap:wrap;gap:8px}
+.empty{text-align:center;color:var(--dim2);padding:60px 16px;font-size:13.5px}
+.empty b{display:block;font-family:var(--disp);font-size:16px;color:var(--washi);margin-bottom:8px}
+
+/* ---------- 一括操作バー ---------- */
+.bulk{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:28;
+  background:var(--sumi3);border-top:1px solid var(--kin);padding:9px 12px;display:none;gap:8px;align-items:center;flex-wrap:wrap}
+.bulk.on{display:flex}
+.bulk span{font-size:12px;color:var(--kin);margin-right:auto}
+
+/* ---------- タブ ---------- */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:29;display:flex;background:rgba(16,19,23,.96);
+  backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;background:none;border:0;padding:10px 2px 11px;color:var(--dim2);font-size:11px;letter-spacing:.08em}
+nav.tabs button b{display:block;font-family:var(--disp);font-size:16px;font-weight:500;margin-bottom:2px}
+nav.tabs button[aria-current="true"]{color:var(--washi)}
+nav.tabs button[aria-current="true"] b{color:var(--ai)}
+
+/* ---------- 表・履歴・設定 ---------- */
+.sec{margin-bottom:26px}
+.sec h2{font-family:var(--disp);font-size:15px;letter-spacing:.16em;margin:0 0 4px;font-weight:500}
+.sec p.lead{font-size:12px;color:var(--dim2);margin:0 0 11px}
+.row{display:flex;align-items:center;gap:9px;background:var(--sumi2);border:1px solid var(--line);border-radius:2px;padding:10px 12px;margin-bottom:7px}
+.row .g{flex:1;min-width:0}
+.row .t{font-size:14px}
+.row .s{font-size:11px;color:var(--dim2);margin-top:2px}
+.role{font-size:10.5px;border:1px solid var(--line);color:var(--dim);padding:2px 7px;border-radius:1px;white-space:nowrap}
+.role.host{color:var(--kin);border-color:#6A5A1A}
+.role.admin{color:var(--ai);border-color:#2A4A70}
+.log{border-left:2px solid var(--line);padding:8px 0 8px 11px;margin-bottom:2px}
+.log .t{font-size:13px}
+.log .m{font-size:10.5px;color:var(--dim2);margin-top:2px}
+.log.del{border-left-color:var(--beni)}
+.log.add{border-left-color:var(--sugi)}
+.hint{font-size:12px;color:var(--dim2);line-height:1.8;background:var(--sumi2);border:1px solid var(--line);padding:11px;border-radius:2px}
 .hint b{color:var(--washi);font-weight:500}
+dialog{border:1px solid var(--line);background:var(--sumi2);color:var(--washi);border-radius:3px;padding:0;width:min(540px,94vw);max-height:86vh}
+dialog::backdrop{background:rgba(8,10,13,.8)}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:13px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--sumi2);z-index:2}
+.dhead h2{font-family:var(--disp);font-size:16px;margin:0;letter-spacing:.14em;font-weight:500}
+.dbody{padding:13px;overflow:auto;max-height:70vh}
+.thumb{width:100%;max-height:220px;object-fit:contain;background:var(--sumi);border:1px solid var(--line);display:block;margin-bottom:10px}
 .readout{font-size:13px;color:#CFC9BC;border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
-@media(min-width:620px){
-  .spec{grid-template-columns:repeat(4,1fr)}
-  .brand h1{font-size:26px}
-}
-@media(prefers-reduced-motion:no-preference){
-  .card{transition:border-left-color .18s ease}
-}
+h3.dt{font-family:var(--disp);font-size:13.5px;letter-spacing:.14em;margin:18px 0 8px}
+h3.dt:first-child{margin-top:0}
+.steps{padding-left:0;margin:0 0 14px;counter-reset:s}
+.steps li{list-style:none;font-size:12.5px;color:#CFC9BC;padding:7px 0 7px 24px;position:relative;border-bottom:1px solid var(--line)}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:7px;font-family:var(--disp);color:var(--ai);font-size:12px}
+.note{font-size:11.5px;color:var(--dim2);margin-top:9px;line-height:1.8}
+@media(min-width:620px){.spec{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <h1>酒帖</h1><span class="sub">SAKE INDEX ／ 五十音順</span>
+<!-- ============ ログイン画面 ============ -->
+<div id="gate">
+  <div class="gatebox">
+    <div class="logo">酒帖</div>
+    <div class="tag">SAKE INDEX &amp; STOCK</div>
+
+    <div class="panel" id="setupPanel" hidden>
+      <h2>はじめての設定</h2>
+      <p class="note" style="margin:0 0 12px">最初に作る利用者が「ホスト」になります。ホストだけが利用者の追加・権限変更・全体の復元を行えます。</p>
+      <div class="field"><label>ホストの利用者名</label><input id="su_name" autocomplete="username" placeholder="例：ゆき"></div>
+      <div class="field"><label>パスワード（8文字以上）</label><input id="su_pw" type="password" autocomplete="new-password"></div>
+      <div class="field"><label>パスワード（確認）</label><input id="su_pw2" type="password" autocomplete="new-password"></div>
+      <div class="field"><label>最初のアカウント名</label><input id="su_acc" value="個人用"></div>
+      <button class="primary" id="su_go">この内容ではじめる</button>
+      <div class="msg" id="su_msg"></div>
+      <p class="note">パスワードを使ってデータを暗号化します。忘れると中身は取り出せません。設定後すぐに設定画面から控えの書き出しをしてください。</p>
+    </div>
+
+    <div class="panel" id="loginPanel" hidden>
+      <h2>ログイン</h2>
+      <div class="field"><label>利用者</label><select id="li_user"></select></div>
+      <div class="field"><label>パスワード</label><input id="li_pw" type="password" autocomplete="current-password"></div>
+      <button class="primary" id="li_go">ログイン</button>
+      <div class="msg" id="li_msg"></div>
+    </div>
   </div>
-  <div class="searchrow">
+</div>
+
+<!-- ============ アプリ本体 ============ -->
+<div id="app" hidden>
+<header>
+  <div class="hrow">
+    <h1>酒帖</h1>
+    <select id="accsel"></select>
+    <div class="who"><b id="whoName"></b><span id="whoRole"></span></div>
+    <button class="lock" id="lockbtn">ロック</button>
+  </div>
+  <div class="searchrow" id="searchrow">
     <div class="search">
       <input id="q" type="search" placeholder="銘柄・蔵・産地・特徴で検索" autocomplete="off">
-      <button class="x" id="qx" aria-label="検索をクリア" hidden>×</button>
+      <button class="x" id="qx" aria-label="消去" hidden>×</button>
     </div>
     <button class="iconbtn" id="ftoggle" aria-expanded="false">絞り込み</button>
   </div>
-
-  <div class="modebar" id="modebar">
-    <button data-mode="list" aria-pressed="true">閲覧</button>
-    <button data-mode="home" aria-pressed="false">個人の在庫</button>
-    <button data-mode="shop" aria-pressed="false">店舗の在庫</button>
-  </div>
-  <dl class="invsum" id="invsum"></dl>
-
+  <dl class="invsum" id="invsum" hidden></dl>
   <div class="filters" id="filters">
     <div class="fgroup">
-      <div class="flabel">味わい（1 甘口 ⇄ 10 辛口）</div>
-      <div class="chips" id="ak"></div>
+      <div class="flabel">甘辛（1 甘口 ⇄ 10 辛口）</div>
+      <div class="rangerow">
+        <input id="akmin" type="number" min="1" max="10" inputmode="numeric" value="1">
+        <span>〜</span>
+        <input id="akmax" type="number" min="1" max="10" inputmode="numeric" value="10">
+        <button class="ghost" id="akapply">この範囲で表示</button>
+      </div>
+      <div class="chips" id="akq"></div>
     </div>
     <div class="fgroup" id="stockg" hidden>
       <div class="flabel">在庫</div>
@@ -273,103 +277,106 @@ h3.dt:first-child{margin-top:0}
         </select>
       </div>
     </div>
-    <div class="fbar">
-      <span class="count" id="count"></span>
-      <button class="txtbtn" id="reset">条件をすべて解除</button>
-    </div>
+    <div class="fbar"><span class="count" id="count"></span><button class="txtbtn" id="reset">条件をすべて解除</button></div>
   </div>
 </header>
 
-<nav class="rail" id="rail" aria-label="五十音ジャンプ"></nav>
+<nav class="rail" id="rail" aria-label="五十音"></nav>
+<main id="view"></main>
 
-<main id="list"></main>
+<div class="bulk" id="bulk">
+  <span id="bulkn"></span>
+  <select id="bulkacc" class="ghost"></select>
+  <button class="ghost" id="bulkmove">移動</button>
+  <button class="ghost" id="bulkcopy">複製</button>
+  <button class="ghost danger" id="bulkdel">在庫から外す</button>
+  <button class="ghost" id="bulkclear">選択解除</button>
+</div>
 
-<footer>
-  <div class="fbtns">
-    <button class="iconbtn" id="photobtn">写真から追加</button>
-    <button class="iconbtn" id="addbtn">手入力で追加</button>
-    <button class="iconbtn" id="installbtn">ホーム画面に追加</button>
-    <button class="iconbtn" id="expbtn">書き出し</button>
-    <button class="iconbtn" id="impbtn">読み込み</button>
-  </div>
-  収録 <span id="total"></span> 銘柄。日本酒度・精米歩合・価格は代表的な商品の参考値で、蔵元の仕様変更や年度により変わります。購入前に蔵元・販売店の表示をご確認ください。<br>
-  甘辛は日本酒度・酸度・味の印象から10段階に置き換えた独自指標です（1＝甘口／10＝辛口）。価格は税込の実勢目安、〔プレ値〕は正価流通が少なく市場価格が上振れしやすい銘柄です。
-</footer>
+<nav class="tabs">
+  <button data-tab="catalog" aria-current="true"><b>帖</b>一覧</button>
+  <button data-tab="stock"><b>庫</b>在庫</button>
+  <button data-tab="history"><b>録</b>履歴</button>
+  <button data-tab="settings"><b>設</b>設定</button>
+</nav>
+</div>
 
-<dialog id="dlgAdd">
-  <div class="dhead"><h2>銘柄を追加</h2><button class="iconbtn" data-close>閉じる</button></div>
+<!-- ============ ダイアログ ============ -->
+<dialog id="dlgPhoto">
+  <div class="dhead"><h2>写真から追加</h2><button class="ghost" data-close>閉じる</button></div>
   <div class="dbody">
-    <div class="two"><div class="field"><label>名称</label><input id="f_name" placeholder="例：飛露喜"></div>
-    <div class="field"><label>よみがな（ひらがな）</label><input id="f_kana" placeholder="ひろき"></div></div>
-    <div class="field"><label>種別（カンマ区切り）</label><input id="f_tags" placeholder="純米, 生酒, 山廃仕込み"></div>
-    <div class="two"><div class="field"><label>精米歩合（％）</label><input id="f_seimai" inputmode="numeric" placeholder="55"></div>
-    <div class="field"><label>日本酒度</label><input id="f_sdo" placeholder="+3"></div></div>
-    <div class="two"><div class="field"><label>甘辛（1〜10）</label><input id="f_ak" inputmode="numeric" placeholder="5"></div>
-    <div class="field"><label>産地</label><input id="f_pref" placeholder="福島"></div></div>
-    <div class="field"><label>酒造名</label><input id="f_kura" placeholder="廣木酒造本店"></div>
-    <div class="field"><label>容量と価格（1行1件：1800ml 3300 のように）</label><textarea id="f_price" rows="3" placeholder="1800ml 3300&#10;720ml 1650"></textarea></div>
-    <div class="field"><label>特徴・説明</label><textarea id="f_desc" rows="3"></textarea></div>
-    <button class="primary" id="f_save">保存する</button>
-    <p class="note">追加した銘柄はこの端末のブラウザに保存されます。機種変更やアプリ再インストールに備えて、ときどき「書き出し」でバックアップしてください。</p>
+    <img id="ph_prev" class="thumb" hidden alt="">
+    <div class="field"><label>ラベルの写真</label><input type="file" id="ph_file" accept="image/*" capture="environment"></div>
+    <div class="field"><label>ラベルの文字（または読み取り結果のJSON）</label>
+      <textarea id="ph_text" rows="5" placeholder="例：飛露喜 特別純米 無濾過生原酒 精米歩合55% 日本酒度+3 720ml 福島県 廣木酒造本店"></textarea></div>
+    <button class="primary" id="ph_read">読み取ってこのアカウントに追加</button>
+    <div class="readout" id="ph_out" hidden></div>
+    <h3 class="dt">写真の文字を入れる方法</h3>
+    <div class="hint"><b>端末の文字認識</b>：iPhoneは写真アプリで文字認識アイコン → 長押しで全選択 → コピー。Androidはフォトのレンズ。<br><b>チャットで読み取る</b>：Claudeに写真を送るとJSONで返ります。それを上の欄に貼り付けてください。</div>
   </div>
 </dialog>
 
-<dialog id="dlgPhoto">
-  <div class="dhead"><h2>写真から追加</h2><button class="iconbtn" data-close>閉じる</button></div>
+<dialog id="dlgAdd">
+  <div class="dhead"><h2>手入力で追加</h2><button class="ghost" data-close>閉じる</button></div>
   <div class="dbody">
-    <img id="ph_prev" class="thumb" hidden alt="ラベルの写真">
-    <div class="field">
-      <label>ラベルの写真（撮影またはライブラリから）</label>
-      <input type="file" id="ph_file" accept="image/*" capture="environment">
-    </div>
-    <div class="field">
-      <label>ラベルの文字（または読み取り結果のJSON）</label>
-      <textarea id="ph_text" rows="5" placeholder="例：飛露喜 特別純米 無濾過生原酒 精米歩合55% 日本酒度+3 720ml 福島県 廣木酒造本店"></textarea>
-    </div>
-    <button class="primary" id="ph_read">文字を読み取ってリストに追加</button>
-    <div class="readout" id="ph_out" hidden></div>
-    <h3 class="dt">写真の文字を入れる方法（どちらも無料）</h3>
-    <div class="hint">
-      <b>1. 端末の文字認識を使う</b><br>
-      iPhone：写真アプリで画像を開き、右下の文字認識アイコンをタップ → 文字を長押しで全選択 → コピー → 上の欄に貼り付け。<br>
-      Android：Googleフォトの「レンズ」→ テキストを選択 → コピー。<br><br>
-      <b>2. このチャットに写真を送る</b><br>
-      Claudeに画像を送れば、名称・種別・精米歩合・日本酒度・産地・酒造を読み取ってJSONで返します。それを上の欄に貼り付ければそのまま登録できます。追加料金はかかりません。
-    </div>
-    <p class="note">収録済みの銘柄名が写真の文字に含まれていれば、精米歩合や産地などは自動で補完されます。</p>
+    <div class="two"><div class="field"><label>名称</label><input id="f_name"></div>
+    <div class="field"><label>よみがな</label><input id="f_kana"></div></div>
+    <div class="field"><label>種別（カンマ区切り）</label><input id="f_tags" placeholder="純米, 生酒, 山廃仕込み"></div>
+    <div class="two"><div class="field"><label>精米歩合（％）</label><input id="f_seimai" inputmode="numeric"></div>
+    <div class="field"><label>日本酒度</label><input id="f_sdo" placeholder="+3"></div></div>
+    <div class="two"><div class="field"><label>甘辛（1〜10）</label><input id="f_ak" inputmode="numeric" placeholder="5"></div>
+    <div class="field"><label>産地</label><input id="f_pref"></div></div>
+    <div class="field"><label>酒造名</label><input id="f_kura"></div>
+    <div class="field"><label>容量と価格（1行1件：1800ml 3300）</label><textarea id="f_price" rows="3"></textarea></div>
+    <div class="field"><label>特徴・説明</label><textarea id="f_desc" rows="3"></textarea></div>
+    <button class="primary" id="f_save">保存する</button>
+  </div>
+</dialog>
+
+<dialog id="dlgUser">
+  <div class="dhead"><h2 id="du_title">利用者を追加</h2><button class="ghost" data-close>閉じる</button></div>
+  <div class="dbody">
+    <div class="field"><label>利用者名</label><input id="du_name"></div>
+    <div class="field"><label>権限</label><select id="du_role">
+      <option value="admin">管理（在庫・銘柄・アカウントの編集）</option>
+      <option value="staff" selected>従業員（在庫の増減とメモのみ）</option>
+      <option value="viewer">閲覧のみ</option>
+    </select></div>
+    <div class="field"><label>初期パスワード（8文字以上）</label><input id="du_pw" type="password" autocomplete="new-password"></div>
+    <button class="primary" id="du_save">保存する</button>
+    <div class="msg" id="du_msg"></div>
+    <p class="note">初期パスワードは本人に伝えてください。本人はログイン後、設定画面から自分で変更できます。</p>
+  </div>
+</dialog>
+
+<dialog id="dlgPw">
+  <div class="dhead"><h2 id="dp_title">パスワードの変更</h2><button class="ghost" data-close>閉じる</button></div>
+  <div class="dbody">
+    <div class="field" id="dp_oldwrap"><label>現在のパスワード</label><input id="dp_old" type="password" autocomplete="current-password"></div>
+    <div class="field"><label>新しいパスワード（8文字以上）</label><input id="dp_new" type="password" autocomplete="new-password"></div>
+    <div class="field"><label>新しいパスワード（確認）</label><input id="dp_new2" type="password" autocomplete="new-password"></div>
+    <button class="primary" id="dp_save">変更する</button>
+    <div class="msg" id="dp_msg"></div>
   </div>
 </dialog>
 
 <dialog id="dlgInstall">
-  <div class="dhead"><h2>ホーム画面／デスクトップに追加</h2><button class="iconbtn" data-close>閉じる</button></div>
+  <div class="dhead"><h2>ホーム画面に追加</h2><button class="ghost" data-close>閉じる</button></div>
   <div class="dbody">
     <h3 class="dt">iPhone・iPad（Safari）</h3>
-    <ol class="steps">
-      <li>このファイル（sake.html）を iCloud Drive や Google ドライブなどに置き、Safari で開く</li>
-      <li>画面下の共有ボタン（□に↑）をタップ</li>
-      <li>「ホーム画面に追加」を選び、名前を「酒帖」にして追加</li>
-    </ol>
+    <ol class="steps"><li>公開したURLをSafariで開く</li><li>下部の共有ボタンをタップ</li><li>「ホーム画面に追加」を選ぶ</li></ol>
     <h3 class="dt">Android（Chrome）</h3>
-    <ol class="steps">
-      <li>Chrome でこのページを開く</li>
-      <li>右上の︙メニューをタップ</li>
-      <li>「ホーム画面に追加」を選ぶ</li>
-    </ol>
-    <h3 class="dt">パソコン（Windows／Mac）</h3>
-    <ol class="steps">
-      <li>sake.html をデスクトップに保存する（それだけでダブルクリックで開けます）</li>
-      <li>常用するなら Chrome / Edge で開き、︙ →「保存して共有」→「ショートカットを作成」→「ウィンドウとして開く」にチェック</li>
-      <li>作られたアイコンをデスクトップに置けば、アプリのように単独ウィンドウで起動します</li>
-    </ol>
-    <p class="note">ネット接続なしでも動きます（フォントだけオンライン時に切り替わります）。iPhone でファイル保存だけではホーム画面に追加できないため、クラウド等の URL で開くのが確実です。</p>
+    <ol class="steps"><li>Chromeでページを開く</li><li>右上の︙メニュー</li><li>「ホーム画面に追加」</li></ol>
+    <h3 class="dt">パソコン</h3>
+    <ol class="steps"><li>ChromeまたはEdgeで開く</li><li>︙→「保存して共有」→「ショートカットを作成」</li><li>「ウィンドウとして開く」にチェック</li></ol>
+    <p class="note">在庫・利用者・履歴はすべてその端末のブラウザ内に暗号化して保存されます。端末をまたいで共有したい場合は、設定画面の書き出しファイルを渡して、相手の端末で読み込んでください。</p>
   </div>
 </dialog>
 
 <input type="file" id="impfile" accept="application/json" hidden>
 
 <script>
-/* ================= データ =================
- [名称, よみ, 種別, 精米歩合, 日本酒度, 甘辛1-10, 産地, 酒造, [[容量ml, 円, 備考]], 説明, 希少] */
+/* ==================== 銘柄データ ==================== */
 const RAW = [
 ["秋鹿","あきしか","純米,山廃仕込み,無濾過",60,"+5",8,"大阪","秋鹿酒造",[[1800,3300],[720,1760]],"全量自営田の山田錦で醸す骨太な純米。酸がしっかりあり、燗にすると旨みが開く。",0],
 ["天の戸","あまのと","純米,生酛",80,"+3",6,"秋田","浅舞酒造",[[1800,2970],[720,1540]],"蔵から半径5km以内の米と湧水だけで醸す。精米歩合80%でも軽やかで、米の甘みと酸の輪郭が出る。",0],
@@ -554,316 +561,735 @@ const RAW = [
 ["至", "いたる", "純米,無濾過", 60, "+2", 4, "新潟", "逸見酒造", [[1800, 3080], [720, 1540]], "佐渡の小さな蔵。柔らかい甘みとほのかな酸で、新潟の淡麗とは違う優しい旨口。", 0],
 ["李白","りはく","特別純米",55,"+4",6,"島根","李白酒造",[[1800,2970],[720,1485]],"詩人の名を冠した松江の蔵。やわらかい旨みとキレで、出雲そばや魚と好相性。",0]
 ];
+const FIELDS=["name","kana","tags","seimai","sdo","ak","pref","kura","prices","desc","rare"];
+const BASE=RAW.map((r,i)=>{const o={};FIELDS.forEach((f,j)=>o[f]=r[j]);o.tags=String(o.tags).split(",");o.id="b"+i;return o;});
 
-const FIELDS = ["name","kana","tags","seimai","sdo","ak","pref","kura","prices","desc","rare"];
-const BASE = RAW.map((r,i)=>{const o={};FIELDS.forEach((f,j)=>o[f]=r[j]);o.tags=String(o.tags).split(",");o.id="b"+i;return o;});
-
-/* ============ 保存（アーティファクト内はwindow.storage、通常はlocalStorage、どちらも不可なら一時保存） ============ */
-const KEY="sakecho.custom.v1";
-const IKEY="sakecho.inv.v1";
-const MKEY="sakecho.mode.v1";
-window.__mem={};
+/* ==================== 保存領域 ==================== */
+const VKEY="sakecho.vault.v3";
+const mem={};
 const store={
   async get(k,def){
-    try{ if(window.storage){const r=await window.storage.get(k,false); return r?JSON.parse(r.value):def;} }catch(e){}
-    try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){}
-    return (k in window.__mem)?window.__mem[k]:def;
+    try{ if(window.storage){const r=await window.storage.get(k,false);return r?JSON.parse(r.value):def;} }catch(e){}
+    try{ const v=localStorage.getItem(k);return v?JSON.parse(v):def; }catch(e){}
+    return (k in mem)?mem[k]:def;
   },
   async set(k,v){
-    window.__mem[k]=v;
-    try{ if(window.storage){await window.storage.set(k,JSON.stringify(v),false); return;} }catch(e){}
-    try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){}
+    mem[k]=v;
+    try{ if(window.storage){await window.storage.set(k,JSON.stringify(v),false);return true;} }catch(e){}
+    try{ localStorage.setItem(k,JSON.stringify(v));return true; }catch(e){}
+    return false;
   }
 };
-let CUSTOM=[];
-let DATA=BASE.slice();
-let INVALL={home:{},shop:{}};
-const inv=()=>INVALL[state.mode]||{};
-function rec(id){const I=inv();if(!I[id])I[id]={q:{},loc:"",memo:"",rate:"",cost:"",sell:"",par:""};return I[id];}
-const qtyOf=id=>{const r=(inv()||{})[id];return r?Object.values(r.q||{}).reduce((a,b)=>a+(Number(b)||0),0):0;};
-const saveInv=()=>store.set(IKEY,INVALL);
 
-/* ============ 五十音 ============ */
-const GYO=[["あ","あいうえおぁぃぅぇぉ"],["か","かきくけこがぎぐげご"],["さ","さしすせそざじずぜぞ"],
-["た","たちつてとだぢづでとど"],["な","なにぬねの"],["は","はひふへほばびぶべぼぱぴぷぺぽ"],
-["ま","まみむめも"],["や","やゆよゃゅょ"],["ら","らりるれろ"],["わ","わをんゔ"]];
-function gyoOf(kana){const c=(kana||"").trim()[0]||"";for(const[g,s]of GYO)if(s.includes(c))return g;return "他";}
+/* ==================== 暗号 ==================== */
+const te=new TextEncoder(),td=new TextDecoder();
+const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u)));
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const rand=n=>crypto.getRandomValues(new Uint8Array(n));
+const ITER=210000;
+async function pwKey(pw,salt){
+  const km=await crypto.subtle.importKey("raw",te.encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:ITER,hash:"SHA-256"},km,
+    {name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function seal(key,bytes){
+  const iv=rand(12);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,bytes);
+  return {iv:b64(iv),ct:b64(ct)};
+}
+async function open_(key,box){
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(box.iv)},key,ub64(box.ct));
+  return new Uint8Array(pt);
+}
+async function importMaster(raw){return crypto.subtle.importKey("raw",raw,{name:"AES-GCM"},false,["encrypt","decrypt"]);}
 
-/* ============ 状態 ============ */
-const state={q:"",ak:"all",tags:new Set(),pref:"",kura:"",sort:"kana",mode:"list",stock:"all"};
-const STOCKS={all:"すべて",in:"在庫あり",low:"残り1本以下",out:"在庫なし"};
-const AK_RANGES={all:[1,10],"甘口":[1,3],"中口":[4,6],"辛口":[7,10]};
+/* ==================== 状態 ==================== */
+let SHELL=null;      // {v,users:[{id,name,role,salt,wrap}],blob}
+let VAULT=null;      // 復号済み本体
+let MASTER=null;     // CryptoKey
+let MASTERRAW=null;  // Uint8Array（利用者追加時に必要）
+let ME=null;
+const ROLES={host:{lv:4,label:"ホスト"},admin:{lv:3,label:"管理"},staff:{lv:2,label:"従業員"},viewer:{lv:1,label:"閲覧のみ"}};
+const lv=()=>ME?ROLES[ME.role].lv:0;
+const can={qty:()=>lv()>=2, edit:()=>lv()>=3, host:()=>lv()>=4};
+const state={tab:"catalog",q:"",akmin:1,akmax:10,tags:new Set(),pref:"",kura:"",sort:"kana",stock:"all",acc:"",sel:new Set()};
+const STOCKS={all:"すべて",in:"在庫あり",low:"残り1本以下",out:"在庫なし",menu:"メニュー掲載"};
 const TAGS=["純米","純米大吟醸","大吟醸","吟醸","特別純米","本醸造","特別本醸造","普通酒","生酛","山廃仕込み","生酒","無濾過","発泡"];
-
-/* ============ 描画 ============ */
 const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const yen=n=>"¥"+Number(n).toLocaleString("ja-JP");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const yen=n=>"¥"+Number(n||0).toLocaleString("ja-JP");
+const uid=p=>p+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
 
-function minPrice(s){const p=(s.prices||[]).map(x=>x[1]).filter(Boolean);return p.length?Math.min(...p):9e9;}
+/* ==================== 保管庫の読み書き ==================== */
+function blankVault(accName){
+  const a={id:uid("a"),name:accName||"個人用"};
+  return {accounts:[a],data:{[a.id]:{custom:[],inv:{}}},log:[],trash:[],settings:{lockMin:15}};
+}
+async function saveVault(){
+  if(!MASTER||!VAULT)return;
+  SHELL.blob=await seal(MASTER,te.encode(JSON.stringify(VAULT)));
+  const ok=await store.set(VKEY,SHELL);
+  if(!ok)toast("保存できませんでした。端末の空き容量をご確認ください");
+}
+function logAct(kind,text,undo){
+  VAULT.log.unshift({t:Date.now(),u:ME?ME.name:"-",k:kind,m:text,undo:undo||null});
+  if(VAULT.log.length>600)VAULT.log.length=600;
+}
+function accData(id){const d=VAULT.data[id||state.acc];return d||{custom:[],inv:{}};}
+function accName(id){const a=VAULT.accounts.find(x=>x.id===id);return a?a.name:"";}
+function catalogOf(id){return BASE.concat(accData(id).custom);}
+function findSake(id,accId){return catalogOf(accId).find(s=>s.id===id);}
+function invRec(id,create){
+  const d=accData();
+  if(!d.inv[id]){ if(!create)return null; d.inv[id]={q:{},loc:"",memo:"",rate:"",cost:"",sell:"",par:"",menu:false}; }
+  return d.inv[id];
+}
+const qtyOf=(id,accId)=>{const r=accData(accId).inv[id];return r?Object.values(r.q||{}).reduce((a,b)=>a+(Number(b)||0),0):0;};
 
+/* ==================== ログイン ==================== */
+function toast(msg,el,ok){
+  const t=el||$("#li_msg");if(!t)return;t.textContent=msg;t.className="msg"+(ok?" ok":"");
+  if(msg)setTimeout(()=>{if(t.textContent===msg)t.textContent="";},4000);
+}
+async function boot(){
+  if(!window.crypto||!crypto.subtle){
+    $("#gate").innerHTML='<div class="gatebox"><div class="panel">このブラウザでは暗号化機能が使えません。https のURL（GitHub Pagesなど）で開いてください。</div></div>';
+    return;
+  }
+  SHELL=await store.get(VKEY,null);
+  if(SHELL&&SHELL.users&&SHELL.users.length){
+    $("#loginPanel").hidden=false;
+    $("#li_user").innerHTML=SHELL.users.map(u=>`<option value="${u.id}">${esc(u.name)}（${ROLES[u.role].label}）</option>`).join("");
+    $("#li_pw").focus();
+  }else{
+    $("#setupPanel").hidden=false;
+  }
+}
+$("#su_go").addEventListener("click",async()=>{
+  const name=$("#su_name").value.trim(),pw=$("#su_pw").value,pw2=$("#su_pw2").value,acc=$("#su_acc").value.trim()||"個人用";
+  const m=$("#su_msg");
+  if(!name)return toast("利用者名を入れてください",m);
+  if(pw.length<8)return toast("パスワードは8文字以上にしてください",m);
+  if(pw!==pw2)return toast("確認用パスワードが一致しません",m);
+  toast("鍵を作成しています…",m,true);
+  const raw=rand(32),salt=rand(16);
+  const key=await pwKey(pw,salt);
+  const wrap=await seal(key,raw);
+  MASTERRAW=raw;MASTER=await importMaster(raw);
+  const user={id:uid("u"),name,role:"host",salt:b64(salt),wrap};
+  SHELL={v:3,users:[user],blob:null};
+  VAULT=blankVault(acc);
+  ME=user;
+  await migrateOld();
+  logAct("add","初期設定を行い、ホスト「"+name+"」を作成しました");
+  await saveVault();
+  startApp();
+});
+$("#li_go").addEventListener("click",login);
+$("#li_pw").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+async function login(){
+  const id=$("#li_user").value,pw=$("#li_pw").value;
+  const u=SHELL.users.find(x=>x.id===id);
+  if(!u)return;
+  toast("確認しています…",$("#li_msg"),true);
+  try{
+    const key=await pwKey(pw,ub64(u.salt));
+    MASTERRAW=await open_(key,u.wrap);
+    MASTER=await importMaster(MASTERRAW);
+    VAULT=SHELL.blob?JSON.parse(td.decode(await open_(MASTER,SHELL.blob))):blankVault();
+    ME=u;
+    $("#li_pw").value="";
+    logAct("in","ログイン");
+    await saveVault();
+    startApp();
+  }catch(e){
+    MASTER=null;MASTERRAW=null;VAULT=null;ME=null;
+    toast("パスワードが違います",$("#li_msg"));
+  }
+}
+function lock(){
+  MASTER=null;MASTERRAW=null;VAULT=null;ME=null;state.sel.clear();
+  $("#app").hidden=true;$("#gate").hidden=false;
+  $("#setupPanel").hidden=true;$("#loginPanel").hidden=false;
+  $("#li_user").innerHTML=SHELL.users.map(u=>`<option value="${u.id}">${esc(u.name)}（${ROLES[u.role].label}）</option>`).join("");
+  $("#li_pw").value="";$("#li_pw").focus();
+}
+$("#lockbtn").addEventListener("click",lock);
+let idleT=null;
+function resetIdle(){
+  clearTimeout(idleT);
+  const min=(VAULT&&VAULT.settings&&VAULT.settings.lockMin)||15;
+  if(min>0&&ME)idleT=setTimeout(lock,min*60000);
+}
+["click","keydown","touchstart"].forEach(e=>document.addEventListener(e,resetIdle,{passive:true}));
+
+/* 旧バージョンのデータを引き継ぐ */
+async function migrateOld(){
+  try{
+    const c=await store.get("sakecho.custom.v1",null);
+    const i=await store.get("sakecho.inv.v1",null);
+    const a0=VAULT.accounts[0].id;
+    if(Array.isArray(c)&&c.length)VAULT.data[a0].custom=c;
+    if(i&&i.home)VAULT.data[a0].inv=i.home;
+    if(i&&i.shop&&Object.keys(i.shop).length){
+      const a={id:uid("a"),name:"店舗1"};VAULT.accounts.push(a);
+      VAULT.data[a.id]={custom:Array.isArray(c)?JSON.parse(JSON.stringify(c)):[],inv:i.shop};
+    }
+  }catch(e){}
+}
+
+/* ==================== アプリ開始 ==================== */
+function startApp(){
+  $("#gate").hidden=true;$("#app").hidden=false;
+  state.acc=VAULT.accounts[0].id;
+  $("#whoName").textContent=ME.name;
+  $("#whoRole").textContent=ROLES[ME.role].label;
+  buildAccSel();buildChips();buildSelects();
+  resetIdle();
+  render();
+}
+function buildAccSel(){
+  $("#accsel").innerHTML=VAULT.accounts.map(a=>`<option value="${a.id}"${a.id===state.acc?" selected":""}>${esc(a.name)}</option>`).join("");
+  $("#bulkacc").innerHTML=VAULT.accounts.filter(a=>a.id!==state.acc).map(a=>`<option value="${a.id}">${esc(a.name)}へ</option>`).join("");
+}
+$("#accsel").addEventListener("change",e=>{state.acc=e.target.value;state.sel.clear();buildAccSel();buildSelects();render();});
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
+  state.tab=b.dataset.tab;state.sel.clear();
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-current",x===b));
+  render();
+}));
+
+/* ==================== 絞り込み ==================== */
+function buildChips(){
+  $("#akq").innerHTML=[["すべて",1,10],["甘口",1,3],["中口",4,6],["辛口",7,10]].map(([l,a,b])=>
+    `<button class="chip" data-ak="${a}-${b}" aria-pressed="${state.akmin===a&&state.akmax===b}">${l}（${a}–${b}）</button>`).join("");
+  $("#stockf").innerHTML=Object.keys(STOCKS).map(k=>
+    `<button class="chip" data-stock="${k}" aria-pressed="${state.stock===k}">${STOCKS[k]}</button>`).join("");
+  $("#tagf").innerHTML=TAGS.map(t=>`<button class="chip" data-tag="${t}" aria-pressed="${state.tags.has(t)}">${t}</button>`).join("");
+  $("#akmin").value=state.akmin;$("#akmax").value=state.akmax;
+}
+function buildSelects(){
+  const c=new Intl.Collator("ja"),L=catalogOf();
+  const prefs=[...new Set(L.map(s=>s.pref))].sort(c.compare);
+  const kuras=[...new Set(L.map(s=>s.kura))].sort(c.compare);
+  $("#pref").innerHTML=`<option value="">産地：すべて</option>`+prefs.map(p=>`<option${state.pref===p?" selected":""}>${esc(p)}</option>`).join("");
+  $("#kura").innerHTML=`<option value="">酒造：すべて</option>`+kuras.map(k=>`<option${state.kura===k?" selected":""}>${esc(k)}</option>`).join("");
+}
+$("#akapply").addEventListener("click",applyRange);
+["#akmin","#akmax"].forEach(s=>$(s).addEventListener("keydown",e=>{if(e.key==="Enter")applyRange();}));
+function applyRange(){
+  let a=Math.round(Number($("#akmin").value)||1),b=Math.round(Number($("#akmax").value)||10);
+  a=Math.min(10,Math.max(1,a));b=Math.min(10,Math.max(1,b));
+  if(a>b){const t=a;a=b;b=t;}
+  state.akmin=a;state.akmax=b;buildChips();render();
+}
+$("#akq").addEventListener("click",e=>{const v=e.target.dataset.ak;if(!v)return;
+  const[a,b]=v.split("-").map(Number);state.akmin=a;state.akmax=b;buildChips();render();});
+$("#stockf").addEventListener("click",e=>{const k=e.target.dataset.stock;if(!k)return;state.stock=k;buildChips();render();});
+$("#tagf").addEventListener("click",e=>{const t=e.target.dataset.tag;if(!t)return;
+  state.tags.has(t)?state.tags.delete(t):state.tags.add(t);buildChips();render();});
+$("#q").addEventListener("input",e=>{state.q=e.target.value.trim();$("#qx").hidden=!state.q;render();});
+$("#qx").addEventListener("click",()=>{$("#q").value="";state.q="";$("#qx").hidden=true;render();});
+$("#ftoggle").addEventListener("click",e=>{const o=$("#filters").classList.toggle("open");e.target.setAttribute("aria-expanded",o);});
+$("#pref").addEventListener("change",e=>{state.pref=e.target.value;render();});
+$("#kura").addEventListener("change",e=>{state.kura=e.target.value;render();});
+$("#sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
+$("#reset").addEventListener("click",()=>{
+  state.q="";state.akmin=1;state.akmax=10;state.tags.clear();state.pref="";state.kura="";state.sort="kana";state.stock="all";
+  $("#q").value="";$("#qx").hidden=true;$("#pref").value="";$("#kura").value="";$("#sort").value="kana";
+  buildChips();render();
+});
+
+/* ==================== 五十音 ==================== */
+const GYO=[["あ","あいうえおぁぃぅぇぉ"],["か","かきくけこがぎぐげご"],["さ","さしすせそざじずぜぞ"],
+["た","たちつてとだぢづでど"],["な","なにぬねの"],["は","はひふへほばびぶべぼぱぴぷぺぽ"],
+["ま","まみむめも"],["や","やゆよゃゅょ"],["ら","らりるれろ"],["わ","わをんゔ"]];
+const gyoOf=k=>{const c=(k||"").trim()[0]||"";for(const[g,s]of GYO)if(s.includes(c))return g;return "他";};
+$("#rail").addEventListener("click",e=>{const g=e.target.dataset.g;if(!g)return;
+  const el=document.getElementById("gyo-"+g);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});
+
+/* ==================== 一覧・在庫の描画 ==================== */
 function match(s){
   if(state.q){
     const q=state.q.toLowerCase();
     const hay=[s.name,s.kana,s.pref,s.kura,s.desc,(s.tags||[]).join(" ")].join(" ").toLowerCase();
     if(!hay.includes(q))return false;
   }
-  const[a,b]=AK_RANGES[state.ak]||[1,10];
-  if(s.ak<a||s.ak>b)return false;
+  if(s.ak<state.akmin||s.ak>state.akmax)return false;
   if(state.tags.size){for(const t of state.tags)if(!(s.tags||[]).includes(t))return false;}
   if(state.pref&&s.pref!==state.pref)return false;
   if(state.kura&&s.kura!==state.kura)return false;
-  if(state.mode!=="list"&&state.stock!=="all"){
-    const n=qtyOf(s.id);
+  if(state.tab==="stock"&&state.stock!=="all"){
+    const n=qtyOf(s.id),r=accData().inv[s.id];
     if(state.stock==="in"&&n<1)return false;
     if(state.stock==="low"&&n>1)return false;
     if(state.stock==="out"&&n>0)return false;
+    if(state.stock==="menu"&&!(r&&r.menu))return false;
   }
   return true;
 }
-
+const minPrice=s=>{const p=(s.prices||[]).map(x=>x[1]).filter(Boolean);return p.length?Math.min(...p):9e9;};
 function sortList(l){
   const c=new Intl.Collator("ja");
-  const by={
-    kana:(x,y)=>c.compare(x.kana,y.kana),
+  const by={kana:(x,y)=>c.compare(x.kana,y.kana),
     ak:(x,y)=>x.ak-y.ak||c.compare(x.kana,y.kana),
     akd:(x,y)=>y.ak-x.ak||c.compare(x.kana,y.kana),
-    seimai:(x,y)=>(x.seimai||999)-(y.seimai||999)||c.compare(x.kana,y.kana),
+    seimai:(x,y)=>(Number(x.seimai)||999)-(Number(y.seimai)||999)||c.compare(x.kana,y.kana),
     price:(x,y)=>minPrice(x)-minPrice(y),
-    stock:(x,y)=>qtyOf(y)-qtyOf(x)||c.compare(x.kana,y.kana)
-  };
+    stock:(x,y)=>qtyOf(y.id)-qtyOf(x.id)||c.compare(x.kana,y.kana)};
   return l.sort(by[state.sort]||by.kana);
 }
-
 function meter(v){
   const pct=((v-1)/9)*100;
-  return `<div class="meter"><div class="mscale">
-    <div class="mticks">${"<i></i>".repeat(10)}</div>
-    <div class="mbar"></div><div class="mpin" style="left:${pct}%"></div></div>
-    <div class="mlab"><span>甘口</span><b>${v} / 10</b><span>辛口</span></div></div>`;
-}
-
-function invRows(s){
-  const r=rec(s.id);
-  return (s.prices||[]).map(p=>{
-    const n=Number(r.q[p[0]]||0);
-    return `<li><span class="v">${esc(p[0])}ml　<span style="color:var(--dim2)">${p[1]?yen(p[1]):"—"}</span></span>
-      <span class="stepper"><button data-q="${s.id}|${p[0]}|-1" aria-label="減らす">−</button>
-      <b class="qty">${n}</b>
-      <button data-q="${s.id}|${p[0]}|1" aria-label="増やす">＋</button></span></li>`;}).join("");
-}
-function invFields(s){
-  const r=rec(s.id);
-  const f=(k,lab,ph,wide)=>`<div class="${wide?"wide":""}"><label>${lab}</label>
-    <input data-inv="${s.id}|${k}" value="${esc(r[k]??"")}" placeholder="${ph}"></div>`;
-  return `<div class="invgrid">`+(state.mode==="shop"
-    ? f("cost","仕入値（円）","2400")+f("sell","売価（円）","3800")+f("par","発注点（本）","2")+f("loc","棚番・保管場所","冷蔵1段目")+f("memo","メモ","取引先・仕入日など",1)
-    : f("loc","保管場所","冷蔵庫")+f("rate","評価（1〜5）","4")+f("memo","メモ","開栓日・感想など",1))+`</div>`;
+  return `<div class="meter"><div class="mscale"><div class="mticks">${"<i></i>".repeat(10)}</div>
+  <div class="mbar"></div><div class="mpin" style="left:${pct}%"></div></div>
+  <div class="mlab"><span>甘口</span><b>${v} / 10</b><span>辛口</span></div></div>`;
 }
 function card(s){
-  const rare=s.rare?'<span class="tag k">プレ値</span>':"";
-  const mine=s.id.startsWith("c")?'<span class="tag mine">自分の追加</span>':"";
-  const tags=(s.tags||[]).filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
-  const prices=(s.prices||[]).map(p=>`<li><span class="v">${esc(p[0])}ml</span><span class="p${p[2]?" rare":""}">${p[1]?yen(p[1]):"—"}${p[2]?" ／ "+esc(p[2]):""}</span></li>`).join("");
-  const r=(inv()||{})[s.id];
-  const n=qtyOf(s.id);
-  const par=Number(r&&r.par)||0;
+  const inStock=state.tab==="stock";
+  const r=accData().inv[s.id];
+  const n=qtyOf(s.id),par=Number(r&&r.par)||0;
   const cls=n===0?" zero":((par&&n<par)||(!par&&n<=1)?" low":"");
-  const badge=state.mode==="list"?"":`<span class="stock${cls}">在庫 ${n}</span>`;
+  const badge=inStock?`<span class="stock${cls}">在庫 ${n}</span>`:(r?`<span class="stock${cls}">在庫 ${n}</span>`:"");
+  const pick=inStock&&can.edit()?`<input type="checkbox" class="pick" data-pick="${s.id}"${state.sel.has(s.id)?" checked":""} aria-label="選択">`:"";
   const th=(r&&r.photo)?`<img class="tmini" src="${r.photo}" alt="">`:"";
-  return `<article class="card" id="${s.id}">
-    <button class="chead" data-id="${s.id}">
-      <div class="ctop"><span class="cname">${esc(s.name)}</span><span class="ckana">${esc(s.kana)}</span>${badge}${th}</div>
+  const menuTag=(r&&r.menu)?'<span class="tag m">メニュー</span>':"";
+  const tags=(s.tags||[]).filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join("")
+    +(s.rare?'<span class="tag k">プレ値</span>':"")+(String(s.id).startsWith("c")?'<span class="tag m">追加分</span>':"")+menuTag;
+  let rows;
+  if(inStock){
+    rows=(s.prices&&s.prices.length?s.prices:[[720,null]]).map(p=>{
+      const q=Number((r&&r.q[p[0]])||0);
+      return `<li><span class="v">${esc(p[0])}ml　<span style="color:var(--dim2)">${p[1]?yen(p[1]):"—"}</span></span>`+
+        (can.qty()?`<span class="stepper"><button data-q="${s.id}|${p[0]}|-1">−</button><b class="qty">${q}</b><button data-q="${s.id}|${p[0]}|1">＋</button></span>`
+                  :`<b class="qty">${q}</b>`)+`</li>`;}).join("");
+  }else{
+    rows=(s.prices||[]).map(p=>`<li><span class="v">${esc(p[0])}ml</span><span class="p${p[2]?" rare":""}">${p[1]?yen(p[1]):"—"}${p[2]?" ／ "+esc(p[2]):""}</span></li>`).join("");
+  }
+  let extra="";
+  if(inStock){
+    const f=(k,lab,ph,wide)=>`<div class="${wide?"wide":""}"><label>${lab}</label><input data-inv="${s.id}|${k}" value="${esc((r&&r[k])??"")}" placeholder="${ph}"${can.edit()||k==="memo"||k==="loc"?"":" disabled"}></div>`;
+    extra=`<div class="invgrid">${f("cost","仕入値（円）","2400")}${f("sell","売価（円）","3800")}${f("par","発注点（本）","2")}${f("loc","棚番・保管場所","冷蔵1段目")}${f("memo","メモ","開栓日・取引先など",1)}</div>
+      <label class="toggle"><input type="checkbox" data-menu="${s.id}"${(r&&r.menu)?" checked":""}${can.edit()?"":" disabled"}>メニューに掲載中（在庫0でも一覧に残す）</label>`;
+  }
+  return `<article class="card${state.sel.has(s.id)?" sel":""}" id="${s.id}">
+    <div class="chead" data-id="${s.id}">
+      <div class="ctop">${pick}<span class="cname">${esc(s.name)}</span><span class="ckana">${esc(s.kana)}</span>${badge}${th}</div>
       <div class="cmeta">${esc(s.pref)}／${esc(s.kura)}　精米 ${esc(s.seimai)}%　日本酒度 ${esc(s.sdo)}</div>
-      <div class="tags">${tags}${rare}${mine}</div>
-      ${meter(s.ak)}
-    </button>
+      <div class="tags">${tags}</div>${meter(s.ak)}
+    </div>
     <div class="cbody">
       <dl class="spec">
         <div><dt>精米歩合</dt><dd>${esc(s.seimai)}%</dd></div>
         <div><dt>日本酒度</dt><dd>${esc(s.sdo)}</dd></div>
         <div><dt>産地</dt><dd>${esc(s.pref)}</dd></div>
-        <div><dt>酒造</dt><dd style="font-size:13px">${esc(s.kura)}</dd></div>
+        <div><dt>酒造</dt><dd style="font-size:12.5px">${esc(s.kura)}</dd></div>
       </dl>
-      <ul class="prices">${state.mode==="list"?(prices||'<li><span class="v">価格未登録</span></li>'):invRows(s)}</ul>
-      ${state.mode==="list"?"":invFields(s)}
+      <ul class="prices">${rows||'<li><span class="v">価格未登録</span></li>'}</ul>
+      ${extra}
       <p class="desc">${esc(s.desc||"")}</p>
       <div class="rowbtns">
-        <button data-copy="${s.id}">内容をコピー</button>
-        ${s.id.startsWith("c")?`<button data-del="${s.id}">削除</button>`:""}
+        ${!inStock&&can.qty()?`<button class="ghost" data-tostock="${s.id}">取扱いに追加</button>`:""}
+        <button class="ghost" data-copy="${s.id}">内容をコピー</button>
+        ${String(s.id).startsWith("c")&&can.edit()?`<button class="ghost danger" data-del="${s.id}">銘柄を削除</button>`:""}
       </div>
-    </div>
-  </article>`;
+    </div></article>`;
 }
-
 function summary(){
   const el=$("#invsum");
-  if(state.mode==="list"){el.className="invsum";el.innerHTML="";return;}
-  const I=inv();let bottles=0,value=0,low=0,kinds=0;
-  for(const s of DATA){
-    const r=I[s.id];if(!r)continue;
-    const n=qtyOf(s.id);if(n>0){bottles+=n;kinds++;}
+  if(state.tab!=="stock"){el.hidden=true;return;}
+  const d=accData();let bottles=0,kinds=0,value=0,low=0;
+  for(const [id,r] of Object.entries(d.inv)){
+    const s=findSake(id);if(!s)continue;
+    const n=qtyOf(id);if(n>0){bottles+=n;kinds++;}
     for(const p of (s.prices||[])){
       const q=Number(r.q[p[0]]||0);if(!q)continue;
-      const unit=(state.mode==="shop"&&Number(r.cost))?Number(r.cost):(p[1]||0);
-      value+=unit*q;
+      value+=(Number(r.cost)||p[1]||0)*q;
     }
-    const par=Number(r.par)||0;
-    if(par&&n<par)low++;
+    const par=Number(r.par)||0;if(par&&n<par)low++;
   }
-  el.className="invsum on";
-  el.innerHTML=`<div><dt>在庫本数</dt><dd>${bottles}</dd></div>
-    <div><dt>銘柄数</dt><dd>${kinds}</dd></div>
-    <div><dt>${state.mode==="shop"?"在庫金額（原価）":"在庫金額（定価）"}</dt><dd>${yen(value)}</dd></div>
-    ${state.mode==="shop"?`<div><dt>発注点を下回る</dt><dd class="${low?"warn":""}">${low}</dd></div>`:""}`;
+  el.hidden=false;
+  el.innerHTML=`<div><dt>在庫本数</dt><dd>${bottles}</dd></div><div><dt>銘柄数</dt><dd>${kinds}</dd></div>
+    <div><dt>在庫金額</dt><dd>${yen(value)}</dd></div><div><dt>発注点割れ</dt><dd class="${low?"warn":""}">${low}</dd></div>`;
 }
-function render(){
-  const list=sortList(DATA.filter(match));
+function renderList(){
+  const d=accData();
+  let src=catalogOf();
+  if(state.tab==="stock")src=src.filter(s=>{const r=d.inv[s.id];return r&&(qtyOf(s.id)>0||r.menu);});
+  const list=sortList(src.filter(match));
+  $("#count").textContent=list.length+" 件";
   summary();
-  $("#count").textContent=list.length+" 件を表示中";
-  $("#total").textContent=DATA.length;
-  const main=$("#list");
-  if(!list.length){main.innerHTML=`<div class="empty"><b>該当する銘柄がありません</b>検索語を短くするか、条件を解除してください。</div>`;drawRail(new Set());return;}
+  const useRail=state.sort==="kana";
+  $("#rail").hidden=!useRail;$("#view").className=useRail?"hasrail":"";
+  if(!list.length){
+    $("#view").innerHTML=`<div class="empty"><b>${state.tab==="stock"?"表示する在庫がありません":"該当する銘柄がありません"}</b>
+      ${state.tab==="stock"?"一覧タブで銘柄を開き、「在庫に登録する」を押すとここに並びます。":"検索語を短くするか、条件を解除してください。"}</div>`;
+    $("#rail").innerHTML="";return;
+  }
   let html="",cur="",used=new Set();
   for(const s of list){
-    if(state.sort==="kana"){
-      const g=gyoOf(s.kana);
-      if(g!==cur){cur=g;used.add(g);html+=`<div class="gyo" id="gyo-${g}"><b>${g}</b><div class="rule"></div><em>行</em></div>`;}
-    }
+    if(useRail){const g=gyoOf(s.kana);if(g!==cur){cur=g;used.add(g);html+=`<div class="gyo" id="gyo-${g}"><b>${g}</b><div class="rule"></div></div>`;}}
     html+=card(s);
   }
-  main.innerHTML=html;
-  drawRail(used);
+  $("#view").innerHTML=html;
+  $("#rail").innerHTML=useRail?GYO.map(([g])=>`<button data-g="${g}" class="${used.has(g)?"on":""}">${g}</button>`).join(""):"";
+  bulkBar();
+}
+function bulkBar(){
+  const b=$("#bulk");
+  if(state.tab==="stock"&&state.sel.size&&can.edit()){b.classList.add("on");$("#bulkn").textContent=state.sel.size+"件を選択中";}
+  else b.classList.remove("on");
 }
 
-function drawRail(used){
-  const rail=$("#rail");
-  const on=state.sort==="kana";
-  rail.style.display=on?"flex":"none";
-  if(!on)return;
-  rail.innerHTML=GYO.map(([g])=>`<button data-g="${g}" class="${used.has(g)?"on":""}">${g}</button>`).join("");
+/* ==================== 履歴 ==================== */
+function renderHistory(){
+  $("#rail").hidden=true;$("#view").className="";
+  const t=VAULT.trash.map((x,i)=>`<div class="row"><div class="g"><div class="t">${esc(x.label)}</div>
+    <div class="s">${esc(accName(x.acc))}／${new Date(x.t).toLocaleString("ja-JP")}／${esc(x.by)}</div></div>
+    ${can.edit()?`<button class="ghost" data-restore="${i}">復元</button>`:""}</div>`).join("")
+    ||`<p class="lead">削除された項目はありません。</p>`;
+  const logs=VAULT.log.map((l,i)=>`<div class="log ${esc(l.k)}"><div class="t">${esc(l.m)}</div>
+    <div class="m">${new Date(l.t).toLocaleString("ja-JP")}／${esc(l.u)}${l.undo?"":""}</div>
+    ${l.undo&&can.edit()?`<button class="ghost" data-undo="${i}" style="margin-top:6px">この操作を元に戻す</button>`:""}</div>`).join("")
+    ||`<p class="lead">記録はまだありません。</p>`;
+  $("#view").innerHTML=`
+    <div class="sec"><h2>ごみ箱</h2><p class="lead">削除した銘柄・在庫・アカウントはここに残ります。復元は管理以上が行えます。</p>${t}</div>
+    <div class="sec"><h2>操作の履歴</h2><p class="lead">直近600件まで記録します。「元に戻す」で変更前の状態に戻せます。</p>${logs}</div>`;
 }
 
-/* ============ イベント ============ */
-$("#q").addEventListener("input",e=>{state.q=e.target.value.trim();$("#qx").hidden=!state.q;render();});
-$("#qx").addEventListener("click",()=>{$("#q").value="";state.q="";$("#qx").hidden=true;render();});
-$("#ftoggle").addEventListener("click",e=>{
-  const open=$("#filters").classList.toggle("open");
-  e.target.setAttribute("aria-expanded",open);
+/* ==================== 設定 ==================== */
+function renderSettings(){
+  $("#rail").hidden=true;$("#view").className="";
+  const accs=VAULT.accounts.map(a=>{
+    const d=VAULT.data[a.id]||{inv:{}};
+    const n=Object.keys(d.inv).length;
+    return `<div class="row"><div class="g"><div class="t">${esc(a.name)}</div><div class="s">登録 ${n} 銘柄</div></div>
+      ${can.edit()?`<button class="ghost" data-rename="${a.id}">名称変更</button>`:""}
+      ${can.host()&&VAULT.accounts.length>1?`<button class="ghost danger" data-accdel="${a.id}">削除</button>`:""}</div>`;}).join("");
+  const users=SHELL.users.map(u=>`<div class="row"><div class="g"><div class="t">${esc(u.name)}${u.id===ME.id?"（自分）":""}</div>
+      <div class="s">${u.id===ME.id?"パスワードは自分で変更できます":"パスワードはご本人のみ変更できます"}</div></div>
+      <span class="role ${esc(u.role)}">${ROLES[u.role].label}</span>
+      ${u.id===ME.id?`<button class="ghost" data-mypw="1">変更</button>`:""}
+      ${can.host()&&u.id!==ME.id?`<button class="ghost" data-urole="${u.id}">権限</button><button class="ghost danger" data-udel="${u.id}">削除</button>`:""}</div>`).join("");
+  $("#view").innerHTML=`
+    <div class="sec"><h2>アカウント</h2><p class="lead">個人用・店舗ごとに在庫を分けて管理します。切替はヘッダーの選択欄から。</p>
+      ${accs}${can.edit()?`<button class="ghost" id="accadd" style="margin-top:6px">アカウントを追加</button>`:""}</div>
+    <div class="sec"><h2>利用者と権限</h2><p class="lead">ホスト＞管理＞従業員＞閲覧のみ。従業員は在庫の増減・メモ・保管場所のみ変更できます。</p>
+      ${users}${can.host()?`<button class="ghost" id="useradd" style="margin-top:6px">利用者を追加</button>`:""}</div>
+    <div class="sec"><h2>銘柄の追加</h2><p class="lead">現在のアカウント「${esc(accName(state.acc))}」に登録されます。</p>
+      <div class="rowbtns">${can.edit()?`<button class="ghost" id="photobtn">写真から追加</button><button class="ghost" id="addbtn">手入力で追加</button>`:`<p class="lead">追加は管理以上の権限が必要です。</p>`}</div></div>
+    <div class="sec"><h2>控えと引き継ぎ</h2><p class="lead">書き出したファイルは暗号化されたままです。読み込む端末でも同じパスワードが必要になります。</p>
+      <div class="rowbtns"><button class="ghost" id="expbtn">書き出し</button>
+      ${can.host()?`<button class="ghost" id="impbtn">読み込み（全体を置き換え）</button>`:""}
+      <button class="ghost" id="installbtn">ホーム画面に追加</button></div></div>
+    <div class="sec"><h2>自動ロック</h2><p class="lead">操作がないまま指定した時間が経つと自動でログアウトします。0で無効。</p>
+      <div class="row"><div class="g"><input id="lockmin" type="number" min="0" max="240" value="${(VAULT.settings&&VAULT.settings.lockMin)??15}" style="width:90px;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:8px"> 分</div>
+      <button class="ghost" id="lockset">保存</button></div></div>
+    <div class="sec"><h2>安全性について</h2>
+      <div class="hint">データはパスワードから作った鍵で暗号化し、この端末の中だけに保存しています。外部には一切送信しません。<br><br>
+      <b>できること</b>：パスワードを知らない人がデータを読むことは防げます。<br>
+      <b>できないこと</b>：このアプリは各端末で単独動作するため、開発者ツールを扱える人物が権限表示を書き換える可能性までは防げません。金銭に直結する運用では、定期的な書き出しと履歴の確認を併用してください。<br><br>
+      パスワードを失うと復元できません。ホストは必ず控えを保管してください。</div></div>`;
+  bind();
+}
+function bind(){
+  const on=(id,fn)=>{const e=$("#"+id);if(e)e.addEventListener("click",fn);};
+  on("accadd",async()=>{
+    const n=prompt("新しいアカウント名を入力してください（例：日の出茶屋）");
+    if(!n||!n.trim())return;
+    const a={id:uid("a"),name:n.trim()};
+    VAULT.accounts.push(a);VAULT.data[a.id]={custom:[],inv:{}};
+    logAct("add","アカウント「"+a.name+"」を追加");
+    await saveVault();buildAccSel();render();
+  });
+  on("useradd",()=>{$("#du_save").dataset.mode="new";$("#du_title").textContent="利用者を追加";$("#dlgUser").showModal();});
+  on("photobtn",()=>$("#dlgPhoto").showModal());
+  on("addbtn",()=>$("#dlgAdd").showModal());
+  on("installbtn",()=>$("#dlgInstall").showModal());
+  on("expbtn",()=>{
+    const blob=new Blob([JSON.stringify(SHELL)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download="sakecho-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();
+  });
+  on("impbtn",()=>{if(confirm("読み込むと、この端末の利用者・在庫・履歴はすべて置き換わります。よろしいですか？"))$("#impfile").click();});
+  on("lockset",async()=>{
+    const v=Math.max(0,Math.min(240,Number($("#lockmin").value)||0));
+    VAULT.settings.lockMin=v;logAct("set","自動ロックを"+v+"分に設定");await saveVault();resetIdle();
+    alert("保存しました");
+  });
+}
+$("#impfile").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!d||!d.users||!d.users.length)throw 0;
+    await store.set(VKEY,d);
+    alert("読み込みました。読み込んだデータのパスワードでログインしてください。");
+    SHELL=d;lock();
+  }catch(_){alert("読み込めませんでした。書き出したファイルを選んでください。");}
+  e.target.value="";
 });
-$("#rail").addEventListener("click",e=>{
-  const g=e.target.dataset.g;if(!g)return;
-  const el=document.getElementById("gyo-"+g);
-  if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
-});
-$("#list").addEventListener("click",async e=>{
-  const qb=e.target.dataset.q;
-  if(qb){
-    const[id,vol,d]=qb.split("|");
-    const r=rec(id);
+
+/* ==================== 画面切替 ==================== */
+function render(){
+  const listView=(state.tab==="catalog"||state.tab==="stock");
+  $("#searchrow").hidden=!listView;$("#filters").hidden=!listView;
+  $("#stockg").hidden=(state.tab!=="stock");
+  if(!listView){$("#invsum").hidden=true;$("#bulk").classList.remove("on");}
+  if(state.tab==="catalog"||state.tab==="stock")renderList();
+  else if(state.tab==="history")renderHistory();
+  else renderSettings();
+}
+
+/* ==================== 操作 ==================== */
+$("#view").addEventListener("click",async e=>{
+  const t=e.target;
+  const pick=t.dataset.pick;
+  if(pick!==undefined&&t.type==="checkbox"){
+    t.checked?state.sel.add(pick):state.sel.delete(pick);
+    document.getElementById(pick).classList.toggle("sel",t.checked);bulkBar();return;
+  }
+  const q=t.dataset.q;
+  if(q){
+    if(!can.qty())return;
+    const[id,vol,d]=q.split("|");
+    const r=invRec(id,true);const before=JSON.parse(JSON.stringify(r));
     r.q[vol]=Math.max(0,(Number(r.q[vol])||0)+Number(d));
-    saveInv();
-    const cell=e.target.parentElement.querySelector(".qty");
-    if(cell)cell.textContent=r.q[vol];
-    const card=document.getElementById(id);
-    const b=card&&card.querySelector(".stock");
-    if(b){const n=qtyOf(id),par=Number(r.par)||0;
-      b.textContent="在庫 "+n;
-      b.className="stock"+(n===0?" zero":((par&&n<par)||(!par&&n<=1)?" low":""));}
-    summary();
+    const s=findSake(id);
+    logAct("qty",`${s?s.name:id}（${vol}ml）を ${before.q[vol]||0} → ${r.q[vol]} 本`,{k:"inv",acc:state.acc,id,rec:before});
+    await saveVault();
+    t.parentElement.querySelector(".qty").textContent=r.q[vol];
+    const n=qtyOf(id),par=Number(r.par)||0,b=document.getElementById(id).querySelector(".stock");
+    if(b){b.textContent="在庫 "+n;b.className="stock"+(n===0?" zero":((par&&n<par)||(!par&&n<=1)?" low":""));}
+    summary();return;
+  }
+  const ts=t.dataset.tostock;
+  if(ts){
+    if(!can.qty())return;
+    const r=invRec(ts,true);r.menu=true;
+    const s=findSake(ts);
+    logAct("add",`${s?s.name:ts} を取扱いに追加`,{k:"inv",acc:state.acc,id:ts,rec:null});
+    await saveVault();t.textContent="在庫タブに追加しました";return;
+  }
+  const cp=t.dataset.copy;
+  if(cp){
+    const s=findSake(cp);if(!s)return;
+    const txt=`${s.name}（${s.kana}）\n${(s.tags||[]).join("・")}／精米${s.seimai}%／日本酒度${s.sdo}／甘辛${s.ak}\n${s.pref}・${s.kura}\n`+
+      (s.prices||[]).map(p=>`${p[0]}ml ${p[1]?yen(p[1]):""}${p[2]?" "+p[2]:""}`).join("\n")+`\n${s.desc||""}`;
+    try{await navigator.clipboard.writeText(txt);t.textContent="コピーしました";setTimeout(()=>t.textContent="内容をコピー",1400);}catch(_){}
     return;
   }
-  const h=e.target.closest(".chead");
-  if(h){document.getElementById(h.dataset.id).classList.toggle("open");return;}
-  const cp=e.target.dataset.copy;
-  if(cp){const s=DATA.find(x=>x.id===cp);
-    const t=`${s.name}（${s.kana}）\n${s.tags.join("・")}／精米${s.seimai}%／日本酒度${s.sdo}／甘辛${s.ak}\n${s.pref}・${s.kura}\n`+
-      s.prices.map(p=>`${p[0]}ml ${p[1]?yen(p[1]):""}${p[2]?" "+p[2]:""}`).join("\n")+`\n${s.desc}`;
-    try{await navigator.clipboard.writeText(t);e.target.textContent="コピーしました";setTimeout(()=>e.target.textContent="内容をコピー",1400);}catch(_){}
-    return;}
-  const del=e.target.dataset.del;
-  if(del){CUSTOM=CUSTOM.filter(x=>x.id!==del);delete INVALL.home[del];delete INVALL.shop[del];
-    await store.set(KEY,CUSTOM);await saveInv();rebuild();}
+  const del=t.dataset.del;
+  if(del){
+    if(!can.edit())return;
+    const d=accData(),i=d.custom.findIndex(x=>x.id===del);if(i<0)return;
+    const item=d.custom[i],rec=d.inv[del]||null;
+    if(!confirm(`「${item.name}」を削除します。ごみ箱から復元できます。`))return;
+    VAULT.trash.unshift({t:Date.now(),by:ME.name,acc:state.acc,label:"銘柄："+item.name,payload:{item,rec}});
+    d.custom.splice(i,1);delete d.inv[del];
+    logAct("del","銘柄「"+item.name+"」を削除",null);
+    await saveVault();buildSelects();render();return;
+  }
+  const rs=t.dataset.restore;
+  if(rs!==undefined){
+    if(!can.edit())return;
+    const x=VAULT.trash[Number(rs)];if(!x)return;
+    const d=VAULT.data[x.acc]||(VAULT.data[x.acc]={custom:[],inv:{}});
+    if(x.payload.account){
+      VAULT.accounts.push(x.payload.account);VAULT.data[x.payload.account.id]=x.payload.data;
+    }else{
+      const it=x.payload.item;
+      if(it&&it.name&&!d.custom.some(c=>c.id===it.id))d.custom.push(it);
+      if(x.payload.rec&&it)d.inv[it.id]=x.payload.rec;
+    }
+    VAULT.trash.splice(Number(rs),1);
+    logAct("add",x.label+" を復元");
+    await saveVault();buildAccSel();buildSelects();render();return;
+  }
+  const un=t.dataset.undo;
+  if(un!==undefined){
+    if(!can.edit())return;
+    const l=VAULT.log[Number(un)];if(!l||!l.undo)return;
+    const u=l.undo;
+    if(u.k==="inv"){
+      const d=VAULT.data[u.acc];if(!d)return;
+      if(u.rec)d.inv[u.id]=u.rec;else delete d.inv[u.id];
+    }else if(u.k==="accName"){
+      const a=VAULT.accounts.find(x=>x.id===u.acc);if(a)a.name=u.name;
+    }else if(u.k==="move"){
+      const from=VAULT.data[u.to],to=VAULT.data[u.from];
+      if(from&&to)for(const id of u.ids){if(from.inv[id]){to.inv[id]=from.inv[id];delete from.inv[id];}}
+    }
+    logAct("add","「"+l.m+"」を元に戻しました");
+    await saveVault();buildAccSel();render();return;
+  }
+  const rn=t.dataset.rename;
+  if(rn){
+    if(!can.edit())return;
+    const a=VAULT.accounts.find(x=>x.id===rn);if(!a)return;
+    const n=prompt("新しいアカウント名",a.name);if(!n||!n.trim())return;
+    const before=a.name;a.name=n.trim();
+    logAct("set",`アカウント名を「${before}」→「${a.name}」に変更`,{k:"accName",acc:a.id,name:before});
+    await saveVault();buildAccSel();render();return;
+  }
+  const ad=t.dataset.accdel;
+  if(ad){
+    if(!can.host())return;
+    const a=VAULT.accounts.find(x=>x.id===ad);if(!a)return;
+    if(!confirm(`アカウント「${a.name}」を削除します。中身ごとごみ箱に入り、復元できます。`))return;
+    VAULT.trash.unshift({t:Date.now(),by:ME.name,acc:ad,label:"アカウント："+a.name,payload:{account:a,data:VAULT.data[ad]}});
+    VAULT.accounts=VAULT.accounts.filter(x=>x.id!==ad);delete VAULT.data[ad];
+    if(state.acc===ad)state.acc=VAULT.accounts[0].id;
+    logAct("del","アカウント「"+a.name+"」を削除");
+    await saveVault();buildAccSel();buildSelects();render();return;
+  }
+  if(t.dataset.mypw){$("#dp_oldwrap").hidden=false;$("#dp_save").dataset.uid=ME.id;$("#dlgPw").showModal();return;}
+  const ur=t.dataset.urole;
+  if(ur){
+    if(!can.host())return;
+    const u=SHELL.users.find(x=>x.id===ur);if(!u)return;
+    const r=prompt("権限を入力してください（admin／staff／viewer）",u.role);
+    if(!r||!["admin","staff","viewer"].includes(r))return;
+    const before=u.role;u.role=r;
+    logAct("set",`${u.name} の権限を ${ROLES[before].label} → ${ROLES[r].label} に変更`);
+    await saveVault();render();return;
+  }
+  const ud=t.dataset.udel;
+  if(ud){
+    if(!can.host())return;
+    const u=SHELL.users.find(x=>x.id===ud);if(!u)return;
+    if(!confirm(`利用者「${u.name}」を削除します。この人はログインできなくなります。`))return;
+    SHELL.users=SHELL.users.filter(x=>x.id!==ud);
+    logAct("del","利用者「"+u.name+"」を削除");
+    await saveVault();render();return;
+  }
+  const head=t.closest(".chead");
+  if(head&&t.type!=="checkbox"){document.getElementById(head.dataset.id).classList.toggle("open");}
 });
-$("#modebar").addEventListener("click",e=>{
-  const m=e.target.dataset.mode;if(!m)return;
-  state.mode=m;store.set(MKEY,m);
-  document.querySelectorAll("#modebar button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
-  $("#stockg").hidden=(m==="list");
-  if(m==="list"&&state.sort==="stock"){state.sort="kana";$("#sort").value="kana";}
-  buildChips();render();
-});
-$("#stockf").addEventListener("click",e=>{const k=e.target.dataset.stock;if(!k)return;state.stock=k;buildChips();render();});
-$("#list").addEventListener("change",e=>{
-  const t=e.target.dataset.inv;if(!t)return;
-  const[id,k]=t.split("|");rec(id)[k]=e.target.value.trim();saveInv();summary();
-});
-$("#pref").addEventListener("change",e=>{state.pref=e.target.value;render();});
-$("#kura").addEventListener("change",e=>{state.kura=e.target.value;render();});
-$("#sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
-$("#reset").addEventListener("click",()=>{
-  state.q="";state.ak="all";state.tags.clear();state.pref="";state.kura="";state.sort="kana";
-  $("#q").value="";$("#qx").hidden=true;$("#pref").value="";$("#kura").value="";$("#sort").value="kana";
-  buildChips();render();
+$("#view").addEventListener("change",async e=>{
+  const t=e.target;
+  const iv=t.dataset.inv;
+  if(iv){
+    const[id,k]=iv.split("|");
+    if((k==="cost"||k==="sell"||k==="par")&&!can.edit())return;
+    if(!can.qty())return;
+    const r=invRec(id,true),before=JSON.parse(JSON.stringify(r));
+    r[k]=t.value.trim();
+    const s=findSake(id);
+    logAct("set",`${s?s.name:id} の項目を更新`,{k:"inv",acc:state.acc,id,rec:before});
+    await saveVault();summary();return;
+  }
+  const mn=t.dataset.menu;
+  if(mn){
+    if(!can.edit())return;
+    const r=invRec(mn,true),before=JSON.parse(JSON.stringify(r));
+    r.menu=t.checked;
+    const s=findSake(mn);
+    logAct("set",`${s?s.name:mn} のメニュー掲載を${t.checked?"開始":"解除"}`,{k:"inv",acc:state.acc,id:mn,rec:before});
+    await saveVault();return;
+  }
 });
 
-function buildChips(){
-  $("#stockf").innerHTML=Object.keys(STOCKS).map(k=>
-    `<button class="chip" data-stock="${k}" aria-pressed="${state.stock===k}">${STOCKS[k]}</button>`).join("");
-  $("#ak").innerHTML=Object.keys(AK_RANGES).map(k=>{
-    const lbl=k==="all"?"すべて":`${k}（${AK_RANGES[k][0]}–${AK_RANGES[k][1]}）`;
-    return `<button class="chip" data-ak="${k}" aria-pressed="${state.ak===k}">${lbl}</button>`;}).join("");
-  $("#tagf").innerHTML=TAGS.map(t=>`<button class="chip" data-tag="${t}" aria-pressed="${state.tags.has(t)}">${t}</button>`).join("");
+/* ---------- 一括操作 ---------- */
+$("#bulkclear").addEventListener("click",()=>{state.sel.clear();render();});
+$("#bulkmove").addEventListener("click",()=>bulkMove(true));
+$("#bulkcopy").addEventListener("click",()=>bulkMove(false));
+async function bulkMove(move){
+  if(!can.edit()||!state.sel.size)return;
+  const to=$("#bulkacc").value;if(!to)return alert("移動先のアカウントがありません。設定画面で追加してください。");
+  const from=state.acc,src=VAULT.data[from],dst=VAULT.data[to];
+  const ids=[...state.sel];
+  for(const id of ids){
+    if(String(id).startsWith("c")){
+      const item=src.custom.find(c=>c.id===id);
+      if(item&&!dst.custom.some(c=>c.id===id))dst.custom.push(JSON.parse(JSON.stringify(item)));
+      if(move)src.custom=src.custom.filter(c=>c.id!==id);
+    }
+    if(src.inv[id]){
+      dst.inv[id]=JSON.parse(JSON.stringify(src.inv[id]));
+      if(move)delete src.inv[id];
+    }
+  }
+  logAct("set",`${ids.length}件を「${accName(from)}」から「${accName(to)}」へ${move?"移動":"複製"}`,
+    move?{k:"move",from,to,ids}:null);
+  state.sel.clear();await saveVault();buildSelects();render();
 }
-$("#ak").addEventListener("click",e=>{const k=e.target.dataset.ak;if(!k)return;state.ak=k;buildChips();render();});
-$("#tagf").addEventListener("click",e=>{const t=e.target.dataset.tag;if(!t)return;
-  state.tags.has(t)?state.tags.delete(t):state.tags.add(t);buildChips();render();});
+$("#bulkdel").addEventListener("click",async()=>{
+  if(!can.edit()||!state.sel.size)return;
+  if(!confirm(state.sel.size+"件を在庫一覧から外します。ごみ箱から復元できます。"))return;
+  const d=accData();
+  for(const id of state.sel){
+    const s=findSake(id);
+    if(d.inv[id]){
+      VAULT.trash.unshift({t:Date.now(),by:ME.name,acc:state.acc,label:"在庫："+(s?s.name:id),
+        payload:{item:{id},rec:JSON.parse(JSON.stringify(d.inv[id]))}});
+      delete d.inv[id];
+    }
+  }
+  logAct("del",state.sel.size+"件を在庫から削除");
+  state.sel.clear();await saveVault();render();
+});
 
-function buildSelects(){
-  const prefs=[...new Set(DATA.map(s=>s.pref))].sort(new Intl.Collator("ja").compare);
-  const kuras=[...new Set(DATA.map(s=>s.kura))].sort(new Intl.Collator("ja").compare);
-  $("#pref").innerHTML=`<option value="">産地：すべて</option>`+prefs.map(p=>`<option ${state.pref===p?"selected":""}>${esc(p)}</option>`).join("");
-  $("#kura").innerHTML=`<option value="">酒造：すべて</option>`+kuras.map(k=>`<option ${state.kura===k?"selected":""}>${esc(k)}</option>`).join("");
-}
-
-/* ============ 追加・書き出し ============ */
-$("#addbtn").addEventListener("click",()=>$("#dlgAdd").showModal());
-$("#installbtn").addEventListener("click",()=>$("#dlgInstall").showModal());
+/* ==================== 利用者・パスワード ==================== */
+$("#du_save").addEventListener("click",async()=>{
+  const name=$("#du_name").value.trim(),role=$("#du_role").value,pw=$("#du_pw").value,m=$("#du_msg");
+  if(!can.host())return;
+  if(!name)return toast("利用者名を入れてください",m);
+  if(SHELL.users.some(u=>u.name===name))return toast("同じ名前の利用者がいます",m);
+  if(pw.length<8)return toast("パスワードは8文字以上にしてください",m);
+  toast("作成しています…",m,true);
+  const salt=rand(16),key=await pwKey(pw,salt);
+  const wrap=await seal(key,MASTERRAW);
+  SHELL.users.push({id:uid("u"),name,role,salt:b64(salt),wrap});
+  logAct("add",`利用者「${name}」（${ROLES[role].label}）を追加`);
+  await saveVault();
+  $("#du_name").value="";$("#du_pw").value="";$("#dlgUser").close();render();
+});
+$("#dp_save").addEventListener("click",async()=>{
+  const m=$("#dp_msg"),id=$("#dp_save").dataset.uid;
+  const u=SHELL.users.find(x=>x.id===id);if(!u)return;
+  const old=$("#dp_old").value,a=$("#dp_new").value,b=$("#dp_new2").value;
+  if(a.length<8)return toast("新しいパスワードは8文字以上にしてください",m);
+  if(a!==b)return toast("確認用が一致しません",m);
+  try{
+    const ok=await pwKey(old,ub64(u.salt));
+    await open_(ok,u.wrap);
+  }catch(_){return toast("現在のパスワードが違います",m);}
+  const salt=rand(16),key=await pwKey(a,salt);
+  u.salt=b64(salt);u.wrap=await seal(key,MASTERRAW);
+  logAct("set","パスワードを変更しました");
+  await saveVault();
+  $("#dp_old").value="";$("#dp_new").value="";$("#dp_new2").value="";
+  $("#dlgPw").close();alert("変更しました");
+});
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",e=>e.target.closest("dialog").close()));
+
+/* ==================== 銘柄追加 ==================== */
 $("#f_save").addEventListener("click",async()=>{
+  if(!can.edit())return;
   const g=id=>$("#"+id).value.trim();
-  if(!g("f_name")){$("#f_name").focus();return;}
+  if(!g("f_name"))return $("#f_name").focus();
   const prices=g("f_price").split("\n").filter(Boolean).map(l=>{
     const m=l.match(/(\d+)\s*ml?\D*(\d[\d,]*)?/i);
     return m?[Number(m[1]),m[2]?Number(m[2].replace(/,/g,"")):null]:null;}).filter(Boolean);
-  CUSTOM.push({id:"c"+Date.now(),name:g("f_name"),kana:g("f_kana")||g("f_name"),
+  const item={id:uid("c"),name:g("f_name"),kana:g("f_kana")||g("f_name"),
     tags:g("f_tags").split(/[,、]/).map(s=>s.trim()).filter(Boolean),
-    seimai:Number(g("f_seimai"))||"—",sdo:g("f_sdo")||"—",ak:Math.min(10,Math.max(1,Number(g("f_ak"))||5)),
-    pref:g("f_pref")||"—",kura:g("f_kura")||"—",prices,desc:g("f_desc"),rare:0});
-  await store.set(KEY,CUSTOM);
+    seimai:Number(g("f_seimai"))||"—",sdo:g("f_sdo")||"—",
+    ak:Math.min(10,Math.max(1,Number(g("f_ak"))||5)),pref:g("f_pref")||"—",kura:g("f_kura")||"—",
+    prices,desc:g("f_desc"),rare:0};
+  accData().custom.push(item);
+  logAct("add",`銘柄「${item.name}」を「${accName(state.acc)}」に追加`);
+  await saveVault();
   ["f_name","f_kana","f_tags","f_seimai","f_sdo","f_ak","f_pref","f_kura","f_price","f_desc"].forEach(i=>$("#"+i).value="");
-  $("#dlgAdd").close();rebuild();
-});
-$("#expbtn").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({v:2,custom:CUSTOM,inv:INVALL},null,2)],{type:"application/json"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sakecho-backup.json";a.click();
-});
-$("#impbtn").addEventListener("click",()=>$("#impfile").click());
-$("#impfile").addEventListener("change",async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{const d=JSON.parse(await f.text());
-    if(Array.isArray(d)){CUSTOM=CUSTOM.concat(d);}
-    else{ if(Array.isArray(d.custom))CUSTOM=CUSTOM.concat(d.custom);
-          if(d.inv){INVALL.home=Object.assign(INVALL.home,d.inv.home||{});INVALL.shop=Object.assign(INVALL.shop,d.inv.shop||{});} }
-    await store.set(KEY,CUSTOM);await saveInv();rebuild();
-  }catch(_){alert("読み込めませんでした。書き出したJSONファイルを選んでください。");}
+  $("#dlgAdd").close();buildSelects();state.tab="catalog";
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-current",x.dataset.tab==="catalog"));
+  render();
 });
 
-/* ============ 写真から追加 ============ */
+/* ==================== 写真から追加 ==================== */
 const PREFS=["北海道","青森","岩手","宮城","秋田","山形","福島","茨城","栃木","群馬","埼玉","千葉","東京","神奈川","新潟","富山","石川","福井","山梨","長野","岐阜","静岡","愛知","三重","滋賀","京都","大阪","兵庫","奈良","和歌山","鳥取","島根","岡山","広島","山口","徳島","香川","愛媛","高知","福岡","佐賀","長崎","熊本","大分","宮崎","鹿児島","沖縄"];
 const TAGWORDS=["純米大吟醸","純米吟醸","特別純米","大吟醸","吟醸","特別本醸造","本醸造","普通酒","生酛","山廃仕込み","山廃","生酒","生詰","無濾過","原酒"];
 let photoData="";
-$("#photobtn").addEventListener("click",()=>$("#dlgPhoto").showModal());
 $("#ph_file").addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
   photoData=await shrink(f);
@@ -872,33 +1298,25 @@ $("#ph_file").addEventListener("change",async e=>{
 function shrink(file){
   return new Promise(res=>{
     const fr=new FileReader();
-    fr.onload=()=>{
-      const im=new Image();
-      im.onload=()=>{
-        const max=640,r=Math.min(1,max/Math.max(im.width,im.height));
-        const c=document.createElement("canvas");
-        c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
-        c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-        res(c.toDataURL("image/jpeg",0.72));
-      };
-      im.onerror=()=>res("");
-      im.src=fr.result;
-    };
+    fr.onload=()=>{const im=new Image();
+      im.onload=()=>{const max=640,r=Math.min(1,max/Math.max(im.width,im.height));
+        const c=document.createElement("canvas");c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
+        c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",0.72));};
+      im.onerror=()=>res("");im.src=fr.result;};
     fr.readAsDataURL(file);
   });
 }
 function sdToAk(sd){
   const n=parseFloat(String(sd).replace("±","+"));
   if(isNaN(n))return 5;
-  if(n<=-10)return 1; if(n<=-5)return 2; if(n<=-2)return 3;
-  if(n<=0)return 4; if(n<=2)return 5; if(n<=4)return 6;
-  if(n<=6)return 7; if(n<=8)return 8; if(n<=11)return 9; return 10;
+  if(n<=-10)return 1;if(n<=-5)return 2;if(n<=-2)return 3;if(n<=0)return 4;if(n<=2)return 5;
+  if(n<=4)return 6;if(n<=6)return 7;if(n<=8)return 8;if(n<=11)return 9;return 10;
 }
 function parseLabel(txt){
   const t=txt.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/％/g,"%");
-  const hit=DATA.find(s=>t.includes(s.name));
+  const hit=catalogOf().find(s=>t.includes(s.name));
   const o=hit?JSON.parse(JSON.stringify(hit)):{name:"",kana:"",tags:[],seimai:"—",sdo:"—",ak:5,pref:"—",kura:"—",prices:[],desc:""};
-  if(hit){o.matched=hit.name;}
+  if(hit)o.matched=hit.name;
   let tags=[...new Set(TAGWORDS.filter(w=>t.includes(w)).map(w=>w==="山廃"?"山廃仕込み":w))];
   tags=tags.filter(w=>!tags.some(v=>v!==w&&v.includes(w)));
   if(tags.length)o.tags=tags;
@@ -907,77 +1325,60 @@ function parseLabel(txt){
   const md=t.match(/日本酒度[^0-9+\-±]{0,6}([+\-±]?\d+(?:\.\d)?)/);
   if(md){o.sdo=md[1].replace("±","+");if(!hit)o.ak=sdToAk(md[1]);}
   const pf=PREFS.find(p=>t.includes(p));if(pf)o.pref=pf;
-  const mk=t.match(/([一-龥ぁ-んァ-ヶA-Za-z]{2,10}(?:酒造場|酒造店|醸造所|酒造|醸造|酒販|本店|商店|合名会社))/);
+  const mk=t.match(/([一-龥ぁ-んァ-ヶA-Za-z]{2,10}(?:酒造場|酒造店|醸造所|酒造|醸造|本店|商店|合名会社))/);
   if(mk&&!hit)o.kura=mk[1];
   const vols=[...t.matchAll(/(\d{3,4})\s*ml/gi)].map(m=>Number(m[1]));
   if(t.includes("一升"))vols.push(1800);
   if(vols.length){
-    const uniq=[...new Set(vols)];
-    o.prices=uniq.map(v=>{const old=(hit&&hit.prices||[]).find(p=>p[0]===v);return old?old.slice():[v,null];});
+    const u=[...new Set(vols)];
+    o.prices=u.map(v=>{const old=((hit&&hit.prices)||[]).find(p=>p[0]===v);return old?old.slice():[v,null];});
   }
   if(!o.name){
-    const line=(t.split(/[\n、,]/).map(x=>x.trim()).filter(x=>x.length>=2&&x.length<=12&&/[一-龥ぁ-んァ-ヶ]/.test(x)&&!TAGWORDS.some(w=>x===w))[0])||"";
-    o.name=line;
+    o.name=(t.split(/[\n、,]/).map(x=>x.trim()).filter(x=>x.length>=2&&x.length<=12&&/[一-龥ぁ-んァ-ヶ]/.test(x)&&!TAGWORDS.includes(x))[0])||"";
   }
   return o;
 }
 $("#ph_read").addEventListener("click",async()=>{
-  const raw=$("#ph_text").value.trim();
-  if(!raw&&!photoData){$("#ph_text").focus();return;}
-  let o=null;
+  if(!can.edit())return;
+  const raw=$("#ph_text").value.trim(),out=$("#ph_out");
+  if(!raw)return $("#ph_text").focus();
+  const d=accData();let added=[];
   try{
     const j=JSON.parse(raw.replace(/^```(?:json)?|```$/g,"").trim());
-    const a=Array.isArray(j)?j:[j];
-    for(const x of a){
-      CUSTOM.push(Object.assign({id:"c"+Date.now()+Math.floor(Math.random()*99),kana:x.name||"",tags:[],seimai:"—",sdo:"—",ak:5,pref:"—",kura:"—",prices:[],desc:"",rare:0},x,
-        {id:"c"+Date.now()+Math.floor(Math.random()*99),tags:[].concat(x.tags||[]),ak:x.ak||sdToAk(x.sdo)}));
+    const arr=Array.isArray(j)?j:[j];
+    for(const x of arr){
+      const item=Object.assign({kana:"",tags:[],seimai:"—",sdo:"—",pref:"—",kura:"—",prices:[],desc:"",rare:0},x,
+        {id:uid("c"),tags:[].concat(x.tags||[]),ak:Number(x.ak)||sdToAk(x.sdo)});
+      item.kana=item.kana||item.name;
+      d.custom.push(item);added.push(item);
     }
-    await finishAdd(a.length+"件を追加しました");
-    return;
-  }catch(_){}
-  o=parseLabel(raw);
-  if(!o.name){$("#ph_out").hidden=false;$("#ph_out").textContent="銘柄名を読み取れませんでした。ラベルの文字をもう少し多く貼り付けるか、手入力で追加してください。";return;}
-  o.id="c"+Date.now();o.kana=o.kana||o.name;o.rare=0;
-  CUSTOM.push(o);
-  await finishAdd(`「${o.name}」を追加しました${o.matched?"（収録データから内容を補完）":""}`);
-});
-async function finishAdd(msg){
-  const added=CUSTOM[CUSTOM.length-1];
-  await store.set(KEY,CUSTOM);
-  if(photoData&&added){
-    INVALL.home[added.id]=Object.assign({q:{},loc:"",memo:"",rate:"",cost:"",sell:"",par:""},INVALL.home[added.id]||{},{photo:photoData});
-    INVALL.shop[added.id]=Object.assign({q:{},loc:"",memo:"",rate:"",cost:"",sell:"",par:""},INVALL.shop[added.id]||{},{photo:photoData});
-    await saveInv();
+  }catch(_){
+    const o=parseLabel(raw);
+    if(!o.name){out.hidden=false;out.textContent="銘柄名を読み取れませんでした。文字をもう少し多く貼り付けるか、手入力で追加してください。";return;}
+    o.id=uid("c");o.kana=o.kana||o.name;o.rare=0;delete o.matched;
+    d.custom.push(o);added.push(o);
   }
-  $("#ph_out").hidden=false;$("#ph_out").textContent=msg;
+  if(photoData&&added.length){
+    const r=invRec(added[0].id,true);r.photo=photoData;
+  }
+  logAct("add",`写真・文字から ${added.length}件を「${accName(state.acc)}」に追加`);
+  await saveVault();
+  out.hidden=false;out.textContent=`「${added.map(a=>a.name).join("、")}」を追加しました`;
   $("#ph_text").value="";$("#ph_file").value="";$("#ph_prev").hidden=true;photoData="";
-  rebuild();
-}
+  buildSelects();render();
+});
 
-/* ============ 起動 ============ */
-function rebuild(){DATA=BASE.concat(CUSTOM);buildSelects();render();}
-(async()=>{
-  CUSTOM=await store.get(KEY,[])||[];
-  const iv=await store.get(IKEY,null);
-  if(iv&&typeof iv==="object"){INVALL.home=iv.home||{};INVALL.shop=iv.shop||{};}
-  const md=await store.get(MKEY,"list");
-  if(md&&["list","home","shop"].includes(md)){
-    state.mode=md;
-    document.querySelectorAll("#modebar button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===md));
-    $("#stockg").hidden=(md==="list");
-  }
-  buildChips();rebuild();
-  // ホーム画面追加用のマニフェスト（URLで開いた場合に有効）
-  try{
-    const m={name:"酒帖",short_name:"酒帖",display:"standalone",background_color:"#101317",theme_color:"#101317",start_url:location.href,
-      icons:[{src:"data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#101317"/><text x="50%" y="58%" font-family="serif" font-size="300" fill="#EFE9DC" text-anchor="middle">酒</text></svg>`))),
-        sizes:"512x512",type:"image/svg+xml",purpose:"any"}]};
-    const l=document.createElement("link");l.rel="manifest";
-    l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));
-    document.head.appendChild(l);
-  }catch(e){}
-})();
+/* ==================== 起動 ==================== */
+boot();
+try{
+  const m={name:"酒帖",short_name:"酒帖",display:"standalone",background_color:"#101317",theme_color:"#101317",start_url:location.href,
+    icons:[{src:"data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#101317"/><text x="50%" y="58%" font-family="serif" font-size="300" fill="#EFE9DC" text-anchor="middle">酒</text></svg>`))),
+      sizes:"512x512",type:"image/svg+xml"}]};
+  const l=document.createElement("link");l.rel="manifest";
+  l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));
+  document.head.appendChild(l);
+}catch(e){}
 </script>
 </body>
 </html>
