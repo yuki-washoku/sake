@@ -203,6 +203,19 @@ h3.dt:first-child{margin-top:0}
 .authtabs button{flex:1;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:9px;font-size:13px;color:var(--dim)}
 .authtabs button[aria-pressed="true"]{background:var(--washi);border-color:var(--washi);color:var(--sumi);font-weight:700}
 .sync{font-size:10.5px;color:var(--dim2);margin-left:auto}
+.photos{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 11px}
+.photos img{width:64px;height:64px;object-fit:cover;border:1px solid var(--line);border-radius:2px;cursor:zoom-in}
+.photos .addp{width:64px;height:64px;border:1px dashed var(--line);border-radius:2px;background:none;color:var(--dim2);font-size:11px;line-height:1.3}
+.lightbox{position:fixed;inset:0;z-index:80;background:rgba(8,10,13,.94);display:grid;place-items:center;padding:16px}
+.lightbox img{max-width:100%;max-height:78vh;object-fit:contain}
+.lightbox .bar{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;gap:8px}
+.pickrow{display:flex;gap:8px;margin-bottom:11px}
+.pickrow button{flex:1;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:12px 8px;font-size:13px;color:var(--washi)}
+.pgrid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+.pgrid .wrap{position:relative}
+.pgrid img{width:76px;height:76px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
+.pgrid button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:var(--sumi3);border:1px solid var(--line);color:var(--washi);font-size:12px;line-height:1;padding:0}
+.ocr{font-size:12px;color:var(--ai);margin:0 0 10px;min-height:1.2em}
 .avatar{width:28px;height:28px;border-radius:50%;background:var(--sumi3);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--dim);flex:none}
 </style>
 </head>
@@ -323,14 +336,35 @@ h3.dt:first-child{margin-top:0}
 <dialog id="dlgPhoto">
   <div class="dhead"><h2>写真から追加</h2><button class="ghost" data-close>閉じる</button></div>
   <div class="dbody">
-    <img id="ph_prev" class="thumb" hidden alt="">
-    <div class="field"><label>ラベルの写真</label><input type="file" id="ph_file" accept="image/*" capture="environment"></div>
-    <div class="field"><label>ラベルの文字（または読み取り結果のJSON）</label>
-      <textarea id="ph_text" rows="5" placeholder="例：飛露喜 特別純米 無濾過生原酒 精米歩合55% 日本酒度+3 720ml 福島県 廣木酒造本店"></textarea></div>
-    <button class="primary" id="ph_read">読み取ってこのアカウントに追加</button>
+    <div class="pickrow">
+      <button id="ph_cam">カメラで撮る</button>
+      <button id="ph_lib">ライブラリから選ぶ</button>
+    </div>
+    <input type="file" id="ph_file_cam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="ph_file_lib" accept="image/*" multiple hidden>
+    <div class="pgrid" id="ph_grid"></div>
+    <button class="ghost" id="ph_ocr" style="width:100%;margin-bottom:10px">写真の文字を読み取る</button>
+    <p class="ocr" id="ph_prog"></p>
+    <div class="field"><label>読み取った文字（手で直せます・JSONを貼っても可）</label>
+      <textarea id="ph_text" rows="5" placeholder="裏ラベルの文字がここに入ります"></textarea></div>
+    <button class="ghost" id="ph_parse" style="width:100%;margin-bottom:14px">文字から項目を作る</button>
+
+    <div class="two"><div class="field"><label>名称</label><input id="p_name"></div>
+    <div class="field"><label>よみがな</label><input id="p_kana"></div></div>
+    <div class="field"><label>種別（カンマ区切り）</label><input id="p_tags" placeholder="純米, 無濾過, 生酒"></div>
+    <div class="two"><div class="field"><label>精米歩合（％）</label><input id="p_seimai" inputmode="numeric"></div>
+    <div class="field"><label>日本酒度</label><input id="p_sdo" placeholder="+3"></div></div>
+    <div class="two"><div class="field"><label>甘辛（1〜10）</label><input id="p_ak" inputmode="numeric" placeholder="5"></div>
+    <div class="field"><label>産地</label><input id="p_pref"></div></div>
+    <div class="field"><label>酒造名</label><input id="p_kura"></div>
+    <div class="field"><label>容量と価格（1行1件：720ml 1650）</label><textarea id="p_price" rows="2"></textarea></div>
+    <div class="field"><label>特徴・説明</label><textarea id="p_desc" rows="2"></textarea></div>
+    <button class="primary" id="ph_save">この内容で追加する</button>
     <div class="readout" id="ph_out" hidden></div>
-    <h3 class="dt">写真の文字を入れる方法</h3>
-    <div class="hint"><b>端末の文字認識</b>：iPhoneは写真アプリの文字認識アイコン → 長押しで全選択 → コピー。Androidはフォトのレンズ。<br><b>チャットで読み取る</b>：Claudeに写真を送るとJSONで返ります。それを上の欄に貼り付けてください。</div>
+
+    <h3 class="dt">うまく読み取れないとき</h3>
+    <div class="hint">読み取りは<b>裏ラベルの印刷文字</b>が得意で、表ラベルの筆文字は苦手です。精米歩合や日本酒度が書かれた面を、明るい場所で正面から大きく写すと精度が上がります。<br><br>
+    それでも読めないときは、<b>iPhoneの文字認識</b>（写真アプリで画像を開き文字認識アイコン→長押しで全選択→コピー）で文字を取り、上の欄に貼り付けてください。Claudeに写真を送ってJSONで返してもらい、それを貼り付ける方法も使えます。</div>
   </div>
 </dialog>
 
@@ -370,6 +404,16 @@ h3.dt:first-child{margin-top:0}
     <p class="note">受け取った人はリンクを開き、自分のメールアドレスで登録またはログインすると、このグループに参加します。リンクを知っている人は誰でも参加できるため、本人にだけ送ってください。</p>
   </div>
 </dialog>
+
+<dialog id="pickTo">
+  <div class="dhead"><h2>写真を追加</h2><button class="ghost" data-close>閉じる</button></div>
+  <div class="dbody">
+    <div class="pickrow"><button id="pt_cam">カメラで撮る</button><button id="pt_lib">ライブラリから選ぶ</button></div>
+    <p class="note">1銘柄につき3枚まで保存できます。長辺900pxに縮小して保存します。</p>
+  </div>
+</dialog>
+<input type="file" id="pt_file_cam" accept="image/*" capture="environment" hidden>
+<input type="file" id="pt_file_lib" accept="image/*" multiple hidden>
 
 <dialog id="dlgInstall">
   <div class="dhead"><h2>ホーム画面に追加</h2><button class="ghost" data-close>閉じる</button></div>
@@ -874,6 +918,11 @@ function card(s){
     rows=(s.prices||[]).map(p=>`<li><span class="v">${esc(p[0])}ml</span><span class="p${p[2]?" rare":""}">${p[1]?yen(p[1]):"—"}${p[2]?" ／ "+esc(p[2]):""}</span></li>`).join("");
   }
   let extra="";
+  if(e){
+    const ps=photosOf(e);
+    extra+=`<div class="photos">${ps.map((u,i)=>`<img src="${u}" data-zoom="${s.id}|${i}" alt="">`).join("")}
+      ${can.qty()&&ps.length<3?`<button class="addp" data-addp="${s.id}">＋写真</button>`:""}</div>`;
+  }
   if(inStock&&e){
     const f=(k,lab,ph,wide)=>`<div class="${wide?"wide":""}"><label>${lab}</label><input data-inv="${s.id}|${k}" value="${esc(e[k]??"")}" placeholder="${ph}"${(can.edit()||k==="memo"||k==="loc")?"":" disabled"}></div>`;
     extra=`<div class="invgrid">${f("cost","仕入値（円）","2400")}${f("sell","売価（円）","3800")}${f("par","発注点（本）","2")}${f("loc","棚番・保管場所","冷蔵1段目")}${f("memo","メモ","開栓日・取引先など",1)}</div>
@@ -1229,25 +1278,166 @@ $("#f_save").addEventListener("click",async()=>{
   render();
 });
 
-/* ==================== 写真から追加 ==================== */
+/* ==================== 写真 ==================== */
 const PREFS=["北海道","青森","岩手","宮城","秋田","山形","福島","茨城","栃木","群馬","埼玉","千葉","東京","神奈川","新潟","富山","石川","福井","山梨","長野","岐阜","静岡","愛知","三重","滋賀","京都","大阪","兵庫","奈良","和歌山","鳥取","島根","岡山","広島","山口","徳島","香川","愛媛","高知","福岡","佐賀","長崎","熊本","大分","宮崎","鹿児島","沖縄"];
 const TAGWORDS=["純米大吟醸","純米吟醸","特別純米","大吟醸","吟醸","特別本醸造","本醸造","普通酒","生酛","山廃仕込み","山廃","生酒","生詰","無濾過","原酒"];
-let photoData="";
-$("#ph_file").addEventListener("change",async e=>{
-  const f=e.target.files[0];if(!f)return;
-  photoData=await shrink(f);
-  const img=$("#ph_prev");img.src=photoData;img.hidden=false;
-});
-function shrink(file){
+
+function photosOf(e){
+  if(!e)return [];
+  if(Array.isArray(e.photos)&&e.photos.length)return e.photos;
+  return e.photo?[e.photo]:[];
+}
+function shrink(file,max,q){
   return new Promise(res=>{
     const fr=new FileReader();
     fr.onload=()=>{const im=new Image();
-      im.onload=()=>{const max=640,r=Math.min(1,max/Math.max(im.width,im.height));
+      im.onload=()=>{const r=Math.min(1,(max||900)/Math.max(im.width,im.height));
         const c=document.createElement("canvas");c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
-        c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",0.72));};
+        c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",q||0.72));};
       im.onerror=()=>res("");im.src=fr.result;};
     fr.readAsDataURL(file);
   });
+}
+/* 読み取り前の下処理：グレースケール＋コントラスト強調 */
+function prep(dataUrl){
+  return new Promise(res=>{
+    const im=new Image();
+    im.onload=()=>{
+      const r=Math.min(2,1600/Math.max(im.width,im.height));
+      const c=document.createElement("canvas");
+      c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);
+      const x=c.getContext("2d");x.drawImage(im,0,0,c.width,c.height);
+      const d=x.getImageData(0,0,c.width,c.height),a=d.data;
+      for(let i=0;i<a.length;i+=4){
+        let v=0.299*a[i]+0.587*a[i+1]+0.114*a[i+2];
+        v=Math.max(0,Math.min(255,(v-128)*1.6+128));
+        a[i]=a[i+1]=a[i+2]=v;
+      }
+      x.putImageData(d,0,0);res(c.toDataURL("image/jpeg",0.9));
+    };
+    im.onerror=()=>res(dataUrl);im.src=dataUrl;
+  });
+}
+/* 既存の銘柄に写真を足す */
+let addTarget=null;
+$("#view").addEventListener("click",e=>{
+  const z=e.target.dataset.zoom;
+  if(z){const[id,i]=z.split("|");openZoom(id,Number(i));return;}
+  const ap=e.target.dataset.addp;
+  if(ap){addTarget=ap;$("#pickTo").showModal();}
+});
+function openZoom(id,i){
+  const it=items().find(x=>x.id===id);if(!it||!it.entry)return;
+  const ps=photosOf(it.entry);if(!ps[i])return;
+  const box=document.createElement("div");box.className="lightbox";
+  box.innerHTML=`<img src="${ps[i]}" alt="">
+    <div class="bar"><button class="ghost" data-x="close">閉じる</button>
+    ${can.qty()?`<button class="ghost danger" data-x="del">この写真を削除</button>`:""}</div>`;
+  box.addEventListener("click",async ev=>{
+    const a=ev.target.dataset.x;
+    if(a==="close"||ev.target===box)box.remove();
+    if(a==="del"){
+      if(!confirm("この写真を削除します。よろしいですか？"))return;
+      const rest=ps.filter((_,j)=>j!==i);
+      const r=await patch(it.entry,{photos:rest,photo:rest[0]||null});
+      box.remove();if(r)render();
+    }
+  });
+  document.body.appendChild(box);
+}
+async function attachPhotos(files){
+  if(!addTarget||!files||!files.length)return;
+  const it=items().find(x=>x.id===addTarget);if(!it)return;
+  const e=await ensureEntry(it);if(!e)return;
+  const cur=photosOf(e).slice();
+  for(const f of [...files].slice(0,3-cur.length)){
+    const d=await shrink(f,900,0.7);if(d)cur.push(d);
+  }
+  const r=await patch(e,{photos:cur,photo:cur[0]||null});
+  addTarget=null;
+  if(r){sync("写真を保存しました");render();}
+}
+$("#pt_cam").addEventListener("click",()=>{$("#pickTo").close();$("#pt_file_cam").click();});
+$("#pt_lib").addEventListener("click",()=>{$("#pickTo").close();$("#pt_file_lib").click();});
+$("#pt_file_cam").addEventListener("change",e=>{attachPhotos(e.target.files);e.target.value="";});
+$("#pt_file_lib").addEventListener("change",e=>{attachPhotos(e.target.files);e.target.value="";});
+
+/* ---------- 新規追加ダイアログ ---------- */
+let shots=[];
+$("#ph_cam").addEventListener("click",()=>$("#ph_file_cam").click());
+$("#ph_lib").addEventListener("click",()=>$("#ph_file_lib").click());
+async function takeShots(files){
+  for(const f of [...files].slice(0,3-shots.length)){
+    const d=await shrink(f,900,0.7);if(d)shots.push(d);
+  }
+  drawShots();
+}
+$("#ph_file_cam").addEventListener("change",e=>{takeShots(e.target.files);e.target.value="";});
+$("#ph_file_lib").addEventListener("change",e=>{takeShots(e.target.files);e.target.value="";});
+function drawShots(){
+  $("#ph_grid").innerHTML=shots.map((u,i)=>`<span class="wrap"><img src="${u}" alt=""><button data-rm="${i}">×</button></span>`).join("");
+}
+$("#ph_grid").addEventListener("click",e=>{
+  const i=e.target.dataset.rm;if(i===undefined)return;
+  shots.splice(Number(i),1);drawShots();
+});
+
+/* ---------- 写真から文字を読む ---------- */
+let ocrWorker=null;
+$("#ph_ocr").addEventListener("click",async()=>{
+  if(!shots.length)return alert("先に写真を撮るか選んでください。");
+  const prog=$("#ph_prog");
+  try{
+    prog.textContent="読み取りの準備をしています（初回は辞書の取得に1〜2分かかります）…";
+    if(!ocrWorker){
+      const T=await import("https://esm.sh/tesseract.js@5.1.1");
+      ocrWorker=await T.createWorker(["jpn","eng"],1,{
+        logger:m=>{if(m.status==="recognizing text")prog.textContent="読み取り中… "+Math.round(m.progress*100)+"%";
+                   else if(m.status)prog.textContent=m.status;}
+      });
+    }
+    let all="";
+    for(let i=0;i<shots.length;i++){
+      prog.textContent=`${i+1}枚目を読み取っています…`;
+      const img=await prep(shots[i]);
+      const {data}=await ocrWorker.recognize(img);
+      all+=(data.text||"")+"\n";
+    }
+    const clean=all.replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();
+    $("#ph_text").value=clean;
+    prog.textContent=clean?"読み取りました。文字を直してから「文字から項目を作る」を押してください。":"文字を検出できませんでした。裏ラベルを大きく写すか、端末の文字認識でコピーしてください。";
+    if(clean)fillFromText(clean);
+  }catch(err){
+    prog.textContent="読み取り機能を読み込めませんでした。端末の文字認識でコピーした文字を、下の欄に貼り付けてください。";
+  }
+});
+$("#ph_parse").addEventListener("click",()=>{
+  const t=$("#ph_text").value.trim();
+  if(!t)return $("#ph_text").focus();
+  fillFromText(t);
+});
+function fillFromText(t){
+  try{
+    const j=JSON.parse(t.replace(/^```(?:json)?|```$/g,"").trim());
+    const x=Array.isArray(j)?j[0]:j;
+    setForm(Object.assign({tags:[],prices:[]},x));
+    $("#ph_prog").textContent="JSONから項目を作りました。内容を確認してください。";
+    return;
+  }catch(_){}
+  setForm(parseLabel(t));
+  $("#ph_prog").textContent="項目を作りました。空欄や誤りを直してください。";
+}
+function setForm(o){
+  $("#p_name").value=o.name||"";
+  $("#p_kana").value=o.kana||"";
+  $("#p_tags").value=(o.tags||[]).join("、");
+  $("#p_seimai").value=(o.seimai&&o.seimai!=="—")?o.seimai:"";
+  $("#p_sdo").value=(o.sdo&&o.sdo!=="—")?o.sdo:"";
+  $("#p_ak").value=o.ak||"";
+  $("#p_pref").value=(o.pref&&o.pref!=="—")?o.pref:"";
+  $("#p_kura").value=(o.kura&&o.kura!=="—")?o.kura:"";
+  $("#p_price").value=(o.prices||[]).map(p=>p[0]+"ml"+(p[1]?" "+p[1]:"")).join("\n");
+  $("#p_desc").value=o.desc||"";
 }
 function sdToAk(sd){
   const n=parseFloat(String(sd).replace("±","+"));
@@ -1256,10 +1446,10 @@ function sdToAk(sd){
   if(n<=4)return 6;if(n<=6)return 7;if(n<=8)return 8;if(n<=11)return 9;return 10;
 }
 function parseLabel(txt){
-  const t=txt.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/％/g,"%");
-  const hit=items().find(s=>t.includes(s.name));
-  const o=hit?JSON.parse(JSON.stringify({name:hit.name,kana:hit.kana,tags:hit.tags,seimai:hit.seimai,sdo:hit.sdo,ak:hit.ak,pref:hit.pref,kura:hit.kura,prices:hit.prices,desc:hit.desc}))
-    :{name:"",kana:"",tags:[],seimai:"—",sdo:"—",ak:5,pref:"—",kura:"—",prices:[],desc:""};
+  const t=txt.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/％/g,"%").replace(/　/g," ");
+  const hit=items().find(s=>s.name&&s.name.length>=2&&t.includes(s.name));
+  const o=hit?{name:hit.name,kana:hit.kana,tags:(hit.tags||[]).slice(),seimai:hit.seimai,sdo:hit.sdo,ak:hit.ak,pref:hit.pref,kura:hit.kura,prices:(hit.prices||[]).map(p=>p.slice()),desc:hit.desc}
+    :{name:"",kana:"",tags:[],seimai:"",sdo:"",ak:5,pref:"",kura:"",prices:[],desc:""};
   let tags=[...new Set(TAGWORDS.filter(w=>t.includes(w)).map(w=>w==="山廃"?"山廃仕込み":w))];
   tags=tags.filter(w=>!tags.some(v=>v!==w&&v.includes(w)));
   if(tags.length)o.tags=tags;
@@ -1272,38 +1462,39 @@ function parseLabel(txt){
   if(mk&&!hit)o.kura=mk[1];
   const vols=[...t.matchAll(/(\d{3,4})\s*ml/gi)].map(m=>Number(m[1]));
   if(t.includes("一升"))vols.push(1800);
+  if(t.includes("四合"))vols.push(720);
   if(vols.length){
     const u=[...new Set(vols)];
     o.prices=u.map(v=>{const old=((hit&&hit.prices)||[]).find(p=>p[0]===v);return old?old.slice():[v,null];});
   }
-  if(!o.name)o.name=(t.split(/[\n、,]/).map(x=>x.trim()).filter(x=>x.length>=2&&x.length<=12&&/[一-龥ぁ-んァ-ヶ]/.test(x)&&!TAGWORDS.includes(x))[0])||"";
+  if(!o.name){
+    const cand=t.split(/[\n、,]/).map(x=>x.trim())
+      .filter(x=>x.length>=2&&x.length<=12&&/[一-龥ぁ-んァ-ヶ]/.test(x)&&!TAGWORDS.some(w=>x.includes(w))&&!/[0-9%]/.test(x));
+    o.name=cand[0]||"";
+  }
   return o;
 }
-$("#ph_read").addEventListener("click",async()=>{
+$("#ph_save").addEventListener("click",async()=>{
   if(!can.edit())return;
-  const raw=$("#ph_text").value.trim(),out=$("#ph_out");
-  if(!raw)return $("#ph_text").focus();
-  let list=[];
-  try{
-    const j=JSON.parse(raw.replace(/^```(?:json)?|```$/g,"").trim());
-    const arr=Array.isArray(j)?j:[j];
-    list=arr.map(x=>Object.assign({kana:"",tags:[],seimai:"—",sdo:"—",pref:"—",kura:"—",prices:[],desc:"",rare:0},x,
-      {tags:[].concat(x.tags||[]),ak:Number(x.ak)||sdToAk(x.sdo)}));
-  }catch(_){
-    const o=parseLabel(raw);
-    if(!o.name){out.hidden=false;out.textContent="銘柄名を読み取れませんでした。文字をもう少し多く貼り付けるか、手入力で追加してください。";return;}
-    list=[o];
-  }
-  for(const c of list){
-    c.kana=c.kana||c.name;
-    const row={group_id:G.id,account_id:state.acc,ref:"custom",custom:c,qty:{},menu:true};
-    if(photoData)row.photo=photoData;
-    const {data,error}=await sb.from("entries").insert(row).select().single();
-    if(error){out.hidden=false;out.textContent=errText(error);return;}
-    ENTRIES.push(data);
-  }
-  out.hidden=false;out.textContent=`「${list.map(a=>a.name).join("、")}」を追加しました`;
-  $("#ph_text").value="";$("#ph_file").value="";$("#ph_prev").hidden=true;photoData="";
+  const g=id=>$("#"+id).value.trim();
+  const out=$("#ph_out");
+  if(!g("p_name")){$("#p_name").focus();out.hidden=false;out.textContent="名称を入れてください。";return;}
+  const prices=g("p_price").split("\n").filter(Boolean).map(l=>{
+    const m=l.match(/(\d+)\s*ml?\D*(\d[\d,]*)?/i);
+    return m?[Number(m[1]),m[2]?Number(m[2].replace(/,/g,"")):null]:null;}).filter(Boolean);
+  const custom={name:g("p_name"),kana:g("p_kana")||g("p_name"),
+    tags:g("p_tags").split(/[,、]/).map(s=>s.trim()).filter(Boolean),
+    seimai:Number(g("p_seimai"))||"—",sdo:g("p_sdo")||"—",
+    ak:Math.min(10,Math.max(1,Number(g("p_ak"))||5)),pref:g("p_pref")||"—",kura:g("p_kura")||"—",
+    prices,desc:g("p_desc"),rare:0};
+  const row={group_id:G.id,account_id:state.acc,ref:"custom",custom,qty:{},menu:true};
+  if(shots.length){row.photos=shots.slice();row.photo=shots[0];}
+  const {data,error}=await sb.from("entries").insert(row).select().single();
+  if(error){out.hidden=false;out.textContent=errText(error);return;}
+  ENTRIES.push(data);
+  out.hidden=false;out.textContent=`「${custom.name}」を追加しました`;
+  shots=[];drawShots();$("#ph_text").value="";$("#ph_prog").textContent="";
+  ["p_name","p_kana","p_tags","p_seimai","p_sdo","p_ak","p_pref","p_kura","p_price","p_desc"].forEach(i=>$("#"+i).value="");
   buildSelects();render();
 });
 
