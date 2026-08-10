@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+
 :root{
   --sumi:#101317; --sumi2:#171B21; --sumi3:#1F242C; --line:#2C333D;
   --washi:#EFE9DC; --dim:#9C9686; --dim2:#6E6A60;
@@ -195,34 +196,55 @@ h3.dt:first-child{margin-top:0}
 .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:7px;font-family:var(--disp);color:var(--ai);font-size:12px}
 .note{font-size:11.5px;color:var(--dim2);margin-top:9px;line-height:1.8}
 @media(min-width:620px){.spec{grid-template-columns:repeat(4,1fr)}}
+
+/* 追加分 */
+.invitebox{background:var(--sumi);border:1px solid var(--kin);border-radius:2px;padding:11px;margin-bottom:11px;word-break:break-all;font-size:12.5px;color:var(--kin)}
+.authtabs{display:flex;gap:6px;margin-bottom:13px}
+.authtabs button{flex:1;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:9px;font-size:13px;color:var(--dim)}
+.authtabs button[aria-pressed="true"]{background:var(--washi);border-color:var(--washi);color:var(--sumi);font-weight:700}
+.sync{font-size:10.5px;color:var(--dim2);margin-left:auto}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--sumi3);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--dim);flex:none}
 </style>
 </head>
 <body>
 
-<!-- ============ ログイン画面 ============ -->
+<!-- ============ 接続設定 ============ -->
 <div id="gate">
   <div class="gatebox">
     <div class="logo">酒帖</div>
     <div class="tag">SAKE INDEX &amp; STOCK</div>
 
-    <div class="panel" id="setupPanel" hidden>
-      <h2>はじめての設定</h2>
-      <p class="note" style="margin:0 0 12px">最初に作る利用者が「ホスト」になります。ホストだけが利用者の追加・権限変更・全体の復元を行えます。</p>
-      <div class="field"><label>ホストの利用者名</label><input id="su_name" autocomplete="username" placeholder="例：ゆき"></div>
-      <div class="field"><label>パスワード（8文字以上）</label><input id="su_pw" type="password" autocomplete="new-password"></div>
-      <div class="field"><label>パスワード（確認）</label><input id="su_pw2" type="password" autocomplete="new-password"></div>
-      <div class="field"><label>最初のアカウント名</label><input id="su_acc" value="個人用"></div>
-      <button class="primary" id="su_go">この内容ではじめる</button>
-      <div class="msg" id="su_msg"></div>
-      <p class="note">パスワードを使ってデータを暗号化します。忘れると中身は取り出せません。設定後すぐに設定画面から控えの書き出しをしてください。</p>
+    <div class="panel" id="connectPanel" hidden>
+      <h2>接続先の設定</h2>
+      <p class="note" style="margin:0 0 12px">Supabase の Project URL と anon key を貼り付けてください。設定はこの端末に保存され、次回からは不要です。</p>
+      <div class="field"><label>Project URL</label><input id="cf_url" placeholder="https://xxxx.supabase.co"></div>
+      <div class="field"><label>anon public key</label><input id="cf_key" placeholder="eyJhbGciOi..."></div>
+      <button class="primary" id="cf_go">保存して接続</button>
+      <div class="msg" id="cf_msg"></div>
     </div>
 
-    <div class="panel" id="loginPanel" hidden>
-      <h2>ログイン</h2>
-      <div class="field"><label>利用者</label><select id="li_user"></select></div>
-      <div class="field"><label>パスワード</label><input id="li_pw" type="password" autocomplete="current-password"></div>
-      <button class="primary" id="li_go">ログイン</button>
-      <div class="msg" id="li_msg"></div>
+    <div class="panel" id="authPanel" hidden>
+      <div id="inviteInfo" class="invitebox" hidden></div>
+      <div class="authtabs">
+        <button data-auth="login" aria-pressed="true">ログイン</button>
+        <button data-auth="signup" aria-pressed="false">新規登録</button>
+      </div>
+      <div class="field"><label>メールアドレス</label><input id="au_email" type="email" autocomplete="email" inputmode="email"></div>
+      <div class="field" id="au_namewrap" hidden><label>表示名</label><input id="au_name" placeholder="山田 太郎"></div>
+      <div class="field"><label>パスワード（8文字以上）</label><input id="au_pw" type="password" autocomplete="current-password"></div>
+      <button class="primary" id="au_go">ログイン</button>
+      <div class="msg" id="au_msg"></div>
+      <p class="note" id="au_note">アカウントはメールアドレスごとに作られます。グループへの参加は、ホストが発行する招待リンクから行います。</p>
+      <button class="txtbtn" id="cf_edit" style="margin-top:8px">接続先を変更する</button>
+    </div>
+
+    <div class="panel" id="groupPanel" hidden>
+      <h2>グループがありません</h2>
+      <p class="note" style="margin:0 0 12px">新しくグループを作ると、あなたがホストになります。すでに招待を受けている場合は、招待リンクを開いてください。</p>
+      <div class="field"><label>グループ名</label><input id="gp_name" placeholder="日の出茶屋"></div>
+      <button class="primary" id="gp_go">グループを作成する</button>
+      <div class="msg" id="gp_msg"></div>
+      <button class="txtbtn" id="gp_out" style="margin-top:10px">ログアウト</button>
     </div>
   </div>
 </div>
@@ -232,9 +254,13 @@ h3.dt:first-child{margin-top:0}
 <header>
   <div class="hrow">
     <h1>酒帖</h1>
-    <select id="accsel"></select>
+    <select id="grpsel"></select>
     <div class="who"><b id="whoName"></b><span id="whoRole"></span></div>
-    <button class="lock" id="lockbtn">ロック</button>
+    <button class="lock" id="outbtn">出る</button>
+  </div>
+  <div class="hrow" style="margin-top:8px">
+    <select id="accsel"></select>
+    <span class="sync" id="sync"></span>
   </div>
   <div class="searchrow" id="searchrow">
     <div class="search">
@@ -256,27 +282,19 @@ h3.dt:first-child{margin-top:0}
       <div class="chips" id="akq"></div>
     </div>
     <div class="fgroup" id="stockg" hidden>
-      <div class="flabel">在庫</div>
-      <div class="chips" id="stockf"></div>
+      <div class="flabel">在庫</div><div class="chips" id="stockf"></div>
     </div>
-    <div class="fgroup">
-      <div class="flabel">種別</div>
-      <div class="chips" id="tagf"></div>
-    </div>
-    <div class="fgroup">
-      <div class="selects">
-        <select id="pref"></select>
-        <select id="kura"></select>
-        <select id="sort">
-          <option value="kana">五十音順</option>
-          <option value="ak">甘口 → 辛口</option>
-          <option value="akd">辛口 → 甘口</option>
-          <option value="seimai">精米歩合が低い順</option>
-          <option value="price">価格が安い順</option>
-          <option value="stock">在庫が多い順</option>
-        </select>
-      </div>
-    </div>
+    <div class="fgroup"><div class="flabel">種別</div><div class="chips" id="tagf"></div></div>
+    <div class="fgroup"><div class="selects">
+      <select id="pref"></select><select id="kura"></select>
+      <select id="sort">
+        <option value="kana">五十音順</option>
+        <option value="ak">甘口 → 辛口</option>
+        <option value="akd">辛口 → 甘口</option>
+        <option value="seimai">精米歩合が低い順</option>
+        <option value="price">価格が安い順</option>
+        <option value="stock">在庫が多い順</option>
+      </select></div></div>
     <div class="fbar"><span class="count" id="count"></span><button class="txtbtn" id="reset">条件をすべて解除</button></div>
   </div>
 </header>
@@ -312,7 +330,7 @@ h3.dt:first-child{margin-top:0}
     <button class="primary" id="ph_read">読み取ってこのアカウントに追加</button>
     <div class="readout" id="ph_out" hidden></div>
     <h3 class="dt">写真の文字を入れる方法</h3>
-    <div class="hint"><b>端末の文字認識</b>：iPhoneは写真アプリで文字認識アイコン → 長押しで全選択 → コピー。Androidはフォトのレンズ。<br><b>チャットで読み取る</b>：Claudeに写真を送るとJSONで返ります。それを上の欄に貼り付けてください。</div>
+    <div class="hint"><b>端末の文字認識</b>：iPhoneは写真アプリの文字認識アイコン → 長押しで全選択 → コピー。Androidはフォトのレンズ。<br><b>チャットで読み取る</b>：Claudeに写真を送るとJSONで返ります。それを上の欄に貼り付けてください。</div>
   </div>
 </dialog>
 
@@ -330,33 +348,26 @@ h3.dt:first-child{margin-top:0}
     <div class="field"><label>容量と価格（1行1件：1800ml 3300）</label><textarea id="f_price" rows="3"></textarea></div>
     <div class="field"><label>特徴・説明</label><textarea id="f_desc" rows="3"></textarea></div>
     <button class="primary" id="f_save">保存する</button>
+    <div class="msg" id="f_msg"></div>
   </div>
 </dialog>
 
-<dialog id="dlgUser">
-  <div class="dhead"><h2 id="du_title">利用者を追加</h2><button class="ghost" data-close>閉じる</button></div>
+<dialog id="dlgInvite">
+  <div class="dhead"><h2>招待リンクの発行</h2><button class="ghost" data-close>閉じる</button></div>
   <div class="dbody">
-    <div class="field"><label>利用者名</label><input id="du_name"></div>
-    <div class="field"><label>権限</label><select id="du_role">
+    <div class="field"><label>渡す権限</label><select id="iv_role">
       <option value="admin">管理（在庫・銘柄・アカウントの編集）</option>
       <option value="staff" selected>従業員（在庫の増減とメモのみ）</option>
       <option value="viewer">閲覧のみ</option>
     </select></div>
-    <div class="field"><label>初期パスワード（8文字以上）</label><input id="du_pw" type="password" autocomplete="new-password"></div>
-    <button class="primary" id="du_save">保存する</button>
-    <div class="msg" id="du_msg"></div>
-    <p class="note">初期パスワードは本人に伝えてください。本人はログイン後、設定画面から自分で変更できます。</p>
-  </div>
-</dialog>
-
-<dialog id="dlgPw">
-  <div class="dhead"><h2 id="dp_title">パスワードの変更</h2><button class="ghost" data-close>閉じる</button></div>
-  <div class="dbody">
-    <div class="field" id="dp_oldwrap"><label>現在のパスワード</label><input id="dp_old" type="password" autocomplete="current-password"></div>
-    <div class="field"><label>新しいパスワード（8文字以上）</label><input id="dp_new" type="password" autocomplete="new-password"></div>
-    <div class="field"><label>新しいパスワード（確認）</label><input id="dp_new2" type="password" autocomplete="new-password"></div>
-    <button class="primary" id="dp_save">変更する</button>
-    <div class="msg" id="dp_msg"></div>
+    <div class="two">
+      <div class="field"><label>有効期間（日）</label><input id="iv_days" type="number" min="1" max="60" value="7"></div>
+      <div class="field"><label>使える人数</label><input id="iv_uses" type="number" min="1" max="50" value="1"></div>
+    </div>
+    <button class="primary" id="iv_go">リンクを発行する</button>
+    <div id="iv_out" class="invitebox" hidden></div>
+    <div class="rowbtns" id="iv_btns" hidden><button class="ghost" id="iv_copy">リンクをコピー</button></div>
+    <p class="note">受け取った人はリンクを開き、自分のメールアドレスで登録またはログインすると、このグループに参加します。リンクを知っている人は誰でも参加できるため、本人にだけ送ってください。</p>
   </div>
 </dialog>
 
@@ -369,13 +380,12 @@ h3.dt:first-child{margin-top:0}
     <ol class="steps"><li>Chromeでページを開く</li><li>右上の︙メニュー</li><li>「ホーム画面に追加」</li></ol>
     <h3 class="dt">パソコン</h3>
     <ol class="steps"><li>ChromeまたはEdgeで開く</li><li>︙→「保存して共有」→「ショートカットを作成」</li><li>「ウィンドウとして開く」にチェック</li></ol>
-    <p class="note">在庫・利用者・履歴はすべてその端末のブラウザ内に暗号化して保存されます。端末をまたいで共有したい場合は、設定画面の書き出しファイルを渡して、相手の端末で読み込んでください。</p>
   </div>
 </dialog>
 
-<input type="file" id="impfile" accept="application/json" hidden>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
-<script>
 /* ==================== 銘柄データ ==================== */
 const RAW = [
 ["秋鹿","あきしか","純米,山廃仕込み,無濾過",60,"+5",8,"大阪","秋鹿酒造",[[1800,3300],[720,1760]],"全量自営田の山田錦で醸す骨太な純米。酸がしっかりあり、燗にすると旨みが開く。",0],
@@ -564,202 +574,201 @@ const RAW = [
 const FIELDS=["name","kana","tags","seimai","sdo","ak","pref","kura","prices","desc","rare"];
 const BASE=RAW.map((r,i)=>{const o={};FIELDS.forEach((f,j)=>o[f]=r[j]);o.tags=String(o.tags).split(",");o.id="b"+i;return o;});
 
-/* ==================== 保存領域 ==================== */
-const VKEY="sakecho.vault.v3";
-const mem={};
-const store={
-  async get(k,def){
-    try{ if(window.storage){const r=await window.storage.get(k,false);return r?JSON.parse(r.value):def;} }catch(e){}
-    try{ const v=localStorage.getItem(k);return v?JSON.parse(v):def; }catch(e){}
-    return (k in mem)?mem[k]:def;
-  },
-  async set(k,v){
-    mem[k]=v;
-    try{ if(window.storage){await window.storage.set(k,JSON.stringify(v),false);return true;} }catch(e){}
-    try{ localStorage.setItem(k,JSON.stringify(v));return true; }catch(e){}
-    return false;
-  }
-};
-
-/* ==================== 暗号 ==================== */
-const te=new TextEncoder(),td=new TextDecoder();
-const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u)));
-const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-const rand=n=>crypto.getRandomValues(new Uint8Array(n));
-const ITER=210000;
-async function pwKey(pw,salt){
-  const km=await crypto.subtle.importKey("raw",te.encode(pw),"PBKDF2",false,["deriveKey"]);
-  return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:ITER,hash:"SHA-256"},km,
-    {name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
-}
-async function seal(key,bytes){
-  const iv=rand(12);
-  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,bytes);
-  return {iv:b64(iv),ct:b64(ct)};
-}
-async function open_(key,box){
-  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(box.iv)},key,ub64(box.ct));
-  return new Uint8Array(pt);
-}
-async function importMaster(raw){return crypto.subtle.importKey("raw",raw,{name:"AES-GCM"},false,["encrypt","decrypt"]);}
+/* ==================== 接続設定 ==================== */
+const DEFAULT_URL="https://pgzrbawbtxmdqjcwvttd.supabase.co";
+const DEFAULT_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnenJiYXdidHhtZHFqY3d2dHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMDU5NDksImV4cCI6MjEwMTg4MTk0OX0.nvckz_YAx1zARLEziYVsMja-FxbTyKuqNakJyBzrZcA";
+const CFGK="sakecho.cfg.v1";
+let cfg=(()=>{try{return JSON.parse(localStorage.getItem(CFGK))||null}catch(e){return null}})()
+      ||(DEFAULT_URL?{url:DEFAULT_URL,key:DEFAULT_KEY}:null);
+let sb=null;
 
 /* ==================== 状態 ==================== */
-let SHELL=null;      // {v,users:[{id,name,role,salt,wrap}],blob}
-let VAULT=null;      // 復号済み本体
-let MASTER=null;     // CryptoKey
-let MASTERRAW=null;  // Uint8Array（利用者追加時に必要）
-let ME=null;
 const ROLES={host:{lv:4,label:"ホスト"},admin:{lv:3,label:"管理"},staff:{lv:2,label:"従業員"},viewer:{lv:1,label:"閲覧のみ"}};
-const lv=()=>ME?ROLES[ME.role].lv:0;
-const can={qty:()=>lv()>=2, edit:()=>lv()>=3, host:()=>lv()>=4};
+let ME=null,GROUPS=[],G=null,ACCOUNTS=[],ENTRIES=[],MEMBERS=[],AUDIT=[],INVITE=null,authMode="login",ch=null;
 const state={tab:"catalog",q:"",akmin:1,akmax:10,tags:new Set(),pref:"",kura:"",sort:"kana",stock:"all",acc:"",sel:new Set()};
 const STOCKS={all:"すべて",in:"在庫あり",low:"残り1本以下",out:"在庫なし",menu:"メニュー掲載"};
 const TAGS=["純米","純米大吟醸","大吟醸","吟醸","特別純米","本醸造","特別本醸造","普通酒","生酛","山廃仕込み","生酒","無濾過","発泡"];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const yen=n=>"¥"+Number(n||0).toLocaleString("ja-JP");
-const uid=p=>p+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+const lv=()=>G?ROLES[G.role].lv:0;
+const can={qty:()=>lv()>=2,edit:()=>lv()>=3,host:()=>lv()>=4};
+function msg(sel,text,ok){const e=$(sel);if(!e)return;e.textContent=text||"";e.className="msg"+(ok?" ok":"");}
+function errText(e){return (e&&(e.message||e.error_description))||"エラーが発生しました";}
+function sync(t){const e=$("#sync");if(e){e.textContent=t||"";if(t)setTimeout(()=>{if(e.textContent===t)e.textContent="";},2500);}}
 
-/* ==================== 保管庫の読み書き ==================== */
-function blankVault(accName){
-  const a={id:uid("a"),name:accName||"個人用"};
-  return {accounts:[a],data:{[a.id]:{custom:[],inv:{}}},log:[],trash:[],settings:{lockMin:15}};
-}
-async function saveVault(){
-  if(!MASTER||!VAULT)return;
-  SHELL.blob=await seal(MASTER,te.encode(JSON.stringify(VAULT)));
-  const ok=await store.set(VKEY,SHELL);
-  if(!ok)toast("保存できませんでした。端末の空き容量をご確認ください");
-}
-function logAct(kind,text,undo){
-  VAULT.log.unshift({t:Date.now(),u:ME?ME.name:"-",k:kind,m:text,undo:undo||null});
-  if(VAULT.log.length>600)VAULT.log.length=600;
-}
-function accData(id){const d=VAULT.data[id||state.acc];return d||{custom:[],inv:{}};}
-function accName(id){const a=VAULT.accounts.find(x=>x.id===id);return a?a.name:"";}
-function catalogOf(id){return BASE.concat(accData(id).custom);}
-function findSake(id,accId){return catalogOf(accId).find(s=>s.id===id);}
-function invRec(id,create){
-  const d=accData();
-  if(!d.inv[id]){ if(!create)return null; d.inv[id]={q:{},loc:"",memo:"",rate:"",cost:"",sell:"",par:"",menu:false}; }
-  return d.inv[id];
-}
-const qtyOf=(id,accId)=>{const r=accData(accId).inv[id];return r?Object.values(r.q||{}).reduce((a,b)=>a+(Number(b)||0),0):0;};
-
-/* ==================== ログイン ==================== */
-function toast(msg,el,ok){
-  const t=el||$("#li_msg");if(!t)return;t.textContent=msg;t.className="msg"+(ok?" ok":"");
-  if(msg)setTimeout(()=>{if(t.textContent===msg)t.textContent="";},4000);
-}
+/* ==================== 起動 ==================== */
+const tokenFromUrl=(()=>{
+  const h=new URLSearchParams(location.hash.replace(/^#/,""));
+  const q=new URLSearchParams(location.search);
+  return h.get("invite")||q.get("invite")||"";
+})();
+boot();
 async function boot(){
-  if(!window.crypto||!crypto.subtle){
-    $("#gate").innerHTML='<div class="gatebox"><div class="panel">このブラウザでは暗号化機能が使えません。https のURL（GitHub Pagesなど）で開いてください。</div></div>';
-    return;
-  }
-  SHELL=await store.get(VKEY,null);
-  if(SHELL&&SHELL.users&&SHELL.users.length){
-    $("#loginPanel").hidden=false;
-    $("#li_user").innerHTML=SHELL.users.map(u=>`<option value="${u.id}">${esc(u.name)}（${ROLES[u.role].label}）</option>`).join("");
-    $("#li_pw").focus();
-  }else{
-    $("#setupPanel").hidden=false;
-  }
+  if(!cfg||!cfg.url||!cfg.key){$("#connectPanel").hidden=false;return;}
+  sb=createClient(cfg.url,cfg.key);
+  const {data:{session}}=await sb.auth.getSession();
+  if(tokenFromUrl)await showInvite();
+  if(session)afterAuth();
+  else{$("#authPanel").hidden=false;$("#au_email").focus();}
 }
-$("#su_go").addEventListener("click",async()=>{
-  const name=$("#su_name").value.trim(),pw=$("#su_pw").value,pw2=$("#su_pw2").value,acc=$("#su_acc").value.trim()||"個人用";
-  const m=$("#su_msg");
-  if(!name)return toast("利用者名を入れてください",m);
-  if(pw.length<8)return toast("パスワードは8文字以上にしてください",m);
-  if(pw!==pw2)return toast("確認用パスワードが一致しません",m);
-  toast("鍵を作成しています…",m,true);
-  const raw=rand(32),salt=rand(16);
-  const key=await pwKey(pw,salt);
-  const wrap=await seal(key,raw);
-  MASTERRAW=raw;MASTER=await importMaster(raw);
-  const user={id:uid("u"),name,role:"host",salt:b64(salt),wrap};
-  SHELL={v:3,users:[user],blob:null};
-  VAULT=blankVault(acc);
-  ME=user;
-  await migrateOld();
-  logAct("add","初期設定を行い、ホスト「"+name+"」を作成しました");
-  await saveVault();
-  startApp();
-});
-$("#li_go").addEventListener("click",login);
-$("#li_pw").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
-async function login(){
-  const id=$("#li_user").value,pw=$("#li_pw").value;
-  const u=SHELL.users.find(x=>x.id===id);
-  if(!u)return;
-  toast("確認しています…",$("#li_msg"),true);
+async function showInvite(){
   try{
-    const key=await pwKey(pw,ub64(u.salt));
-    MASTERRAW=await open_(key,u.wrap);
-    MASTER=await importMaster(MASTERRAW);
-    VAULT=SHELL.blob?JSON.parse(td.decode(await open_(MASTER,SHELL.blob))):blankVault();
-    ME=u;
-    $("#li_pw").value="";
-    logAct("in","ログイン");
-    await saveVault();
-    startApp();
-  }catch(e){
-    MASTER=null;MASTERRAW=null;VAULT=null;ME=null;
-    toast("パスワードが違います",$("#li_msg"));
-  }
-}
-function lock(){
-  MASTER=null;MASTERRAW=null;VAULT=null;ME=null;state.sel.clear();
-  $("#app").hidden=true;$("#gate").hidden=false;
-  $("#setupPanel").hidden=true;$("#loginPanel").hidden=false;
-  $("#li_user").innerHTML=SHELL.users.map(u=>`<option value="${u.id}">${esc(u.name)}（${ROLES[u.role].label}）</option>`).join("");
-  $("#li_pw").value="";$("#li_pw").focus();
-}
-$("#lockbtn").addEventListener("click",lock);
-let idleT=null;
-function resetIdle(){
-  clearTimeout(idleT);
-  const min=(VAULT&&VAULT.settings&&VAULT.settings.lockMin)||15;
-  if(min>0&&ME)idleT=setTimeout(lock,min*60000);
-}
-["click","keydown","touchstart"].forEach(e=>document.addEventListener(e,resetIdle,{passive:true}));
-
-/* 旧バージョンのデータを引き継ぐ */
-async function migrateOld(){
-  try{
-    const c=await store.get("sakecho.custom.v1",null);
-    const i=await store.get("sakecho.inv.v1",null);
-    const a0=VAULT.accounts[0].id;
-    if(Array.isArray(c)&&c.length)VAULT.data[a0].custom=c;
-    if(i&&i.home)VAULT.data[a0].inv=i.home;
-    if(i&&i.shop&&Object.keys(i.shop).length){
-      const a={id:uid("a"),name:"店舗1"};VAULT.accounts.push(a);
-      VAULT.data[a.id]={custom:Array.isArray(c)?JSON.parse(JSON.stringify(c)):[],inv:i.shop};
-    }
+    const {data,error}=await sb.rpc("invite_info",{p_token:tokenFromUrl});
+    if(error)throw error;
+    const box=$("#inviteInfo");box.hidden=false;
+    if(data&&data.ok){INVITE=data;box.textContent=`招待：「${data.group}」に ${ROLES[data.role].label} として参加します。ログインまたは新規登録してください。`;}
+    else box.textContent="この招待リンクは無効です（期限切れ、または使用済み）。ホストに再発行を依頼してください。";
   }catch(e){}
 }
+$("#cf_go").addEventListener("click",()=>{
+  const url=$("#cf_url").value.trim().replace(/\/$/,""),key=$("#cf_key").value.trim();
+  if(!/^https:\/\/.+\.supabase\.co$/.test(url))return msg("#cf_msg","Project URL の形式が違います");
+  if(key.length<40)return msg("#cf_msg","anon key を貼り付けてください");
+  cfg={url,key};localStorage.setItem(CFGK,JSON.stringify(cfg));location.reload();
+});
+$("#cf_edit").addEventListener("click",()=>{
+  localStorage.removeItem(CFGK);location.reload();
+});
+document.querySelectorAll("[data-auth]").forEach(b=>b.addEventListener("click",()=>{
+  authMode=b.dataset.auth;
+  document.querySelectorAll("[data-auth]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  $("#au_namewrap").hidden=(authMode!=="signup");
+  $("#au_go").textContent=(authMode==="signup")?"登録してはじめる":"ログイン";
+  $("#au_pw").autocomplete=(authMode==="signup")?"new-password":"current-password";
+  msg("#au_msg","");
+}));
+$("#au_go").addEventListener("click",doAuth);
+$("#au_pw").addEventListener("keydown",e=>{if(e.key==="Enter")doAuth();});
+async function doAuth(){
+  const email=$("#au_email").value.trim(),pw=$("#au_pw").value,name=$("#au_name").value.trim();
+  if(!email)return msg("#au_msg","メールアドレスを入れてください");
+  if(pw.length<8)return msg("#au_msg","パスワードは8文字以上にしてください");
+  msg("#au_msg","確認しています…",true);
+  try{
+    if(authMode==="signup"){
+      const {error}=await sb.auth.signUp({email,password:pw,options:{data:{name:name||email.split("@")[0]}}});
+      if(error)throw error;
+      const {error:e2}=await sb.auth.signInWithPassword({email,password:pw});
+      if(e2)throw new Error("登録は完了しました。確認メールが必要な設定の場合は、メールを開いてから再度ログインしてください。");
+    }else{
+      const {error}=await sb.auth.signInWithPassword({email,password:pw});
+      if(error)throw error;
+    }
+    afterAuth();
+  }catch(e){msg("#au_msg",errText(e));}
+}
+async function afterAuth(){
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){$("#authPanel").hidden=false;return;}
+  ME={id:user.id,email:user.email,name:(user.user_metadata&&user.user_metadata.name)||user.email};
+  if(tokenFromUrl){
+    try{
+      const {error}=await sb.rpc("accept_invite",{p_token:tokenFromUrl});
+      if(error)throw error;
+      history.replaceState(null,"",location.pathname);
+    }catch(e){alert(errText(e));}
+  }
+  await loadGroups();
+}
+async function loadGroups(){
+  const {data,error}=await sb.from("memberships").select("group_id,role,groups(name)");
+  if(error){alert(errText(error));return;}
+  GROUPS=(data||[]).map(m=>({id:m.group_id,role:m.role,name:m.groups?m.groups.name:"(不明)"}));
+  if(!GROUPS.length){$("#gate").hidden=false;$("#authPanel").hidden=true;$("#groupPanel").hidden=false;return;}
+  const last=localStorage.getItem("sakecho.lastgroup");
+  G=GROUPS.find(g=>g.id===last)||GROUPS[0];
+  await openGroup();
+}
+$("#gp_go").addEventListener("click",async()=>{
+  const name=$("#gp_name").value.trim();
+  if(!name)return msg("#gp_msg","グループ名を入れてください");
+  msg("#gp_msg","作成しています…",true);
+  const {error}=await sb.rpc("create_group",{p_name:name});
+  if(error)return msg("#gp_msg",errText(error));
+  $("#groupPanel").hidden=true;await loadGroups();
+});
+$("#gp_out").addEventListener("click",signOut);
+$("#outbtn").addEventListener("click",signOut);
+async function signOut(){await sb.auth.signOut();location.reload();}
 
-/* ==================== アプリ開始 ==================== */
-function startApp(){
+/* ==================== データ読み込み ==================== */
+async function openGroup(){
+  localStorage.setItem("sakecho.lastgroup",G.id);
+  await Promise.all([loadAccounts(),loadEntries()]);
+  if(!ACCOUNTS.length&&can.edit())await addAccount("個人用",true);
+  state.acc=(ACCOUNTS[0]||{}).id||"";
   $("#gate").hidden=true;$("#app").hidden=false;
-  state.acc=VAULT.accounts[0].id;
-  $("#whoName").textContent=ME.name;
-  $("#whoRole").textContent=ROLES[ME.role].label;
-  buildAccSel();buildChips();buildSelects();
-  resetIdle();
-  render();
+  $("#whoName").textContent=ME.name;$("#whoRole").textContent=ROLES[G.role].label;
+  buildGrpSel();buildAccSel();buildChips();buildSelects();subscribe();render();
+}
+async function loadAccounts(){
+  const {data,error}=await sb.from("accounts").select("*").eq("group_id",G.id).is("deleted_at",null).order("created_at");
+  if(error){alert(errText(error));return;}
+  ACCOUNTS=data||[];
+}
+async function loadEntries(){
+  const {data,error}=await sb.from("entries").select("*").eq("group_id",G.id).is("deleted_at",null);
+  if(error){alert(errText(error));return;}
+  ENTRIES=data||[];
+}
+function subscribe(){
+  if(ch)sb.removeChannel(ch);
+  ch=sb.channel("e-"+G.id)
+    .on("postgres_changes",{event:"*",schema:"public",table:"entries",filter:"group_id=eq."+G.id},()=>{
+      clearTimeout(subscribe._t);
+      subscribe._t=setTimeout(async()=>{await loadEntries();sync("最新に更新しました");render();},400);
+    }).subscribe();
+}
+
+/* ==================== 品目 ==================== */
+function entryOf(ref,acc){return ENTRIES.find(e=>e.account_id===(acc||state.acc)&&e.ref===ref)||null;}
+function items(acc){
+  const a=acc||state.acc;
+  const base=BASE.map(s=>Object.assign({},s,{entry:entryOf(s.id,a)}));
+  const cus=ENTRIES.filter(e=>e.account_id===a&&e.ref==="custom"&&e.custom)
+    .map(e=>Object.assign({},e.custom,{id:e.id,entry:e,isCustom:true}));
+  return base.concat(cus);
+}
+const qtyOf=it=>it.entry?Object.values(it.entry.qty||{}).reduce((a,b)=>a+(Number(b)||0),0):0;
+const accName=id=>{const a=ACCOUNTS.find(x=>x.id===id);return a?a.name:"";};
+
+/* ==================== 書き込み ==================== */
+async function ensureEntry(it){
+  if(it.entry)return it.entry;
+  const {data,error}=await sb.from("entries")
+    .insert({group_id:G.id,account_id:state.acc,ref:it.id,qty:{},menu:true}).select().single();
+  if(error){alert(errText(error));return null;}
+  ENTRIES.push(data);it.entry=data;return data;
+}
+async function patch(entry,fields){
+  const {data,error}=await sb.from("entries").update(fields).eq("id",entry.id).select().single();
+  if(error){alert(errText(error));return null;}
+  Object.assign(entry,data);return data;
+}
+async function addAccount(name,silent){
+  const {data,error}=await sb.from("accounts").insert({group_id:G.id,name}).select().single();
+  if(error){if(!silent)alert(errText(error));return null;}
+  ACCOUNTS.push(data);return data;
+}
+
+/* ==================== 絞り込みUI ==================== */
+function buildGrpSel(){
+  $("#grpsel").innerHTML=GROUPS.map(g=>`<option value="${g.id}"${g.id===G.id?" selected":""}>${esc(g.name)}</option>`).join("");
 }
 function buildAccSel(){
-  $("#accsel").innerHTML=VAULT.accounts.map(a=>`<option value="${a.id}"${a.id===state.acc?" selected":""}>${esc(a.name)}</option>`).join("");
-  $("#bulkacc").innerHTML=VAULT.accounts.filter(a=>a.id!==state.acc).map(a=>`<option value="${a.id}">${esc(a.name)}へ</option>`).join("");
+  $("#accsel").innerHTML=ACCOUNTS.map(a=>`<option value="${a.id}"${a.id===state.acc?" selected":""}>${esc(a.name)}</option>`).join("");
+  $("#bulkacc").innerHTML=ACCOUNTS.filter(a=>a.id!==state.acc).map(a=>`<option value="${a.id}">${esc(a.name)}へ</option>`).join("");
 }
+$("#grpsel").addEventListener("change",async e=>{
+  G=GROUPS.find(g=>g.id===e.target.value);state.sel.clear();await openGroup();
+});
 $("#accsel").addEventListener("change",e=>{state.acc=e.target.value;state.sel.clear();buildAccSel();buildSelects();render();});
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
   state.tab=b.dataset.tab;state.sel.clear();
   document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-current",x===b));
   render();
 }));
-
-/* ==================== 絞り込み ==================== */
 function buildChips(){
   $("#akq").innerHTML=[["すべて",1,10],["甘口",1,3],["中口",4,6],["辛口",7,10]].map(([l,a,b])=>
     `<button class="chip" data-ak="${a}-${b}" aria-pressed="${state.akmin===a&&state.akmax===b}">${l}（${a}–${b}）</button>`).join("");
@@ -769,20 +778,20 @@ function buildChips(){
   $("#akmin").value=state.akmin;$("#akmax").value=state.akmax;
 }
 function buildSelects(){
-  const c=new Intl.Collator("ja"),L=catalogOf();
+  const c=new Intl.Collator("ja"),L=items();
   const prefs=[...new Set(L.map(s=>s.pref))].sort(c.compare);
   const kuras=[...new Set(L.map(s=>s.kura))].sort(c.compare);
   $("#pref").innerHTML=`<option value="">産地：すべて</option>`+prefs.map(p=>`<option${state.pref===p?" selected":""}>${esc(p)}</option>`).join("");
   $("#kura").innerHTML=`<option value="">酒造：すべて</option>`+kuras.map(k=>`<option${state.kura===k?" selected":""}>${esc(k)}</option>`).join("");
 }
-$("#akapply").addEventListener("click",applyRange);
-["#akmin","#akmax"].forEach(s=>$(s).addEventListener("keydown",e=>{if(e.key==="Enter")applyRange();}));
 function applyRange(){
   let a=Math.round(Number($("#akmin").value)||1),b=Math.round(Number($("#akmax").value)||10);
   a=Math.min(10,Math.max(1,a));b=Math.min(10,Math.max(1,b));
   if(a>b){const t=a;a=b;b=t;}
   state.akmin=a;state.akmax=b;buildChips();render();
 }
+$("#akapply").addEventListener("click",applyRange);
+["#akmin","#akmax"].forEach(s=>$(s).addEventListener("keydown",e=>{if(e.key==="Enter")applyRange();}));
 $("#akq").addEventListener("click",e=>{const v=e.target.dataset.ak;if(!v)return;
   const[a,b]=v.split("-").map(Number);state.akmin=a;state.akmax=b;buildChips();render();});
 $("#stockf").addEventListener("click",e=>{const k=e.target.dataset.stock;if(!k)return;state.stock=k;buildChips();render();});
@@ -808,23 +817,22 @@ const gyoOf=k=>{const c=(k||"").trim()[0]||"";for(const[g,s]of GYO)if(s.includes
 $("#rail").addEventListener("click",e=>{const g=e.target.dataset.g;if(!g)return;
   const el=document.getElementById("gyo-"+g);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});
 
-/* ==================== 一覧・在庫の描画 ==================== */
+/* ==================== 一覧・在庫 ==================== */
 function match(s){
   if(state.q){
     const q=state.q.toLowerCase();
-    const hay=[s.name,s.kana,s.pref,s.kura,s.desc,(s.tags||[]).join(" ")].join(" ").toLowerCase();
-    if(!hay.includes(q))return false;
+    if(![s.name,s.kana,s.pref,s.kura,s.desc,(s.tags||[]).join(" ")].join(" ").toLowerCase().includes(q))return false;
   }
   if(s.ak<state.akmin||s.ak>state.akmax)return false;
   if(state.tags.size){for(const t of state.tags)if(!(s.tags||[]).includes(t))return false;}
   if(state.pref&&s.pref!==state.pref)return false;
   if(state.kura&&s.kura!==state.kura)return false;
   if(state.tab==="stock"&&state.stock!=="all"){
-    const n=qtyOf(s.id),r=accData().inv[s.id];
+    const n=qtyOf(s);
     if(state.stock==="in"&&n<1)return false;
     if(state.stock==="low"&&n>1)return false;
     if(state.stock==="out"&&n>0)return false;
-    if(state.stock==="menu"&&!(r&&r.menu))return false;
+    if(state.stock==="menu"&&!(s.entry&&s.entry.menu))return false;
   }
   return true;
 }
@@ -836,7 +844,7 @@ function sortList(l){
     akd:(x,y)=>y.ak-x.ak||c.compare(x.kana,y.kana),
     seimai:(x,y)=>(Number(x.seimai)||999)-(Number(y.seimai)||999)||c.compare(x.kana,y.kana),
     price:(x,y)=>minPrice(x)-minPrice(y),
-    stock:(x,y)=>qtyOf(y.id)-qtyOf(x.id)||c.compare(x.kana,y.kana)};
+    stock:(x,y)=>qtyOf(y)-qtyOf(x)||c.compare(x.kana,y.kana)};
   return l.sort(by[state.sort]||by.kana);
 }
 function meter(v){
@@ -846,20 +854,19 @@ function meter(v){
   <div class="mlab"><span>甘口</span><b>${v} / 10</b><span>辛口</span></div></div>`;
 }
 function card(s){
-  const inStock=state.tab==="stock";
-  const r=accData().inv[s.id];
-  const n=qtyOf(s.id),par=Number(r&&r.par)||0;
+  const inStock=state.tab==="stock",e=s.entry;
+  const n=qtyOf(s),par=Number(e&&e.par)||0;
   const cls=n===0?" zero":((par&&n<par)||(!par&&n<=1)?" low":"");
-  const badge=inStock?`<span class="stock${cls}">在庫 ${n}</span>`:(r?`<span class="stock${cls}">在庫 ${n}</span>`:"");
+  const badge=e?`<span class="stock${cls}">在庫 ${n}</span>`:"";
   const pick=inStock&&can.edit()?`<input type="checkbox" class="pick" data-pick="${s.id}"${state.sel.has(s.id)?" checked":""} aria-label="選択">`:"";
-  const th=(r&&r.photo)?`<img class="tmini" src="${r.photo}" alt="">`:"";
-  const menuTag=(r&&r.menu)?'<span class="tag m">メニュー</span>':"";
+  const th=(e&&e.photo)?`<img class="tmini" src="${e.photo}" alt="">`:"";
   const tags=(s.tags||[]).filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join("")
-    +(s.rare?'<span class="tag k">プレ値</span>':"")+(String(s.id).startsWith("c")?'<span class="tag m">追加分</span>':"")+menuTag;
+    +(s.rare?'<span class="tag k">プレ値</span>':"")+(s.isCustom?'<span class="tag m">追加分</span>':"")
+    +((e&&e.menu)?'<span class="tag m">メニュー</span>':"");
   let rows;
   if(inStock){
-    rows=(s.prices&&s.prices.length?s.prices:[[720,null]]).map(p=>{
-      const q=Number((r&&r.q[p[0]])||0);
+    rows=((s.prices&&s.prices.length)?s.prices:[[720,null]]).map(p=>{
+      const q=Number((e&&e.qty&&e.qty[p[0]])||0);
       return `<li><span class="v">${esc(p[0])}ml　<span style="color:var(--dim2)">${p[1]?yen(p[1]):"—"}</span></span>`+
         (can.qty()?`<span class="stepper"><button data-q="${s.id}|${p[0]}|-1">−</button><b class="qty">${q}</b><button data-q="${s.id}|${p[0]}|1">＋</button></span>`
                   :`<b class="qty">${q}</b>`)+`</li>`;}).join("");
@@ -867,12 +874,12 @@ function card(s){
     rows=(s.prices||[]).map(p=>`<li><span class="v">${esc(p[0])}ml</span><span class="p${p[2]?" rare":""}">${p[1]?yen(p[1]):"—"}${p[2]?" ／ "+esc(p[2]):""}</span></li>`).join("");
   }
   let extra="";
-  if(inStock){
-    const f=(k,lab,ph,wide)=>`<div class="${wide?"wide":""}"><label>${lab}</label><input data-inv="${s.id}|${k}" value="${esc((r&&r[k])??"")}" placeholder="${ph}"${can.edit()||k==="memo"||k==="loc"?"":" disabled"}></div>`;
+  if(inStock&&e){
+    const f=(k,lab,ph,wide)=>`<div class="${wide?"wide":""}"><label>${lab}</label><input data-inv="${s.id}|${k}" value="${esc(e[k]??"")}" placeholder="${ph}"${(can.edit()||k==="memo"||k==="loc")?"":" disabled"}></div>`;
     extra=`<div class="invgrid">${f("cost","仕入値（円）","2400")}${f("sell","売価（円）","3800")}${f("par","発注点（本）","2")}${f("loc","棚番・保管場所","冷蔵1段目")}${f("memo","メモ","開栓日・取引先など",1)}</div>
-      <label class="toggle"><input type="checkbox" data-menu="${s.id}"${(r&&r.menu)?" checked":""}${can.edit()?"":" disabled"}>メニューに掲載中（在庫0でも一覧に残す）</label>`;
+      <label class="toggle"><input type="checkbox" data-menu="${s.id}"${e.menu?" checked":""}${can.edit()?"":" disabled"}>メニューに掲載中（在庫0でも一覧に残す）</label>`;
   }
-  return `<article class="card${state.sel.has(s.id)?" sel":""}" id="${s.id}">
+  return `<article class="card${state.sel.has(s.id)?" sel":""}" id="c-${s.id}">
     <div class="chead" data-id="${s.id}">
       <div class="ctop">${pick}<span class="cname">${esc(s.name)}</span><span class="ckana">${esc(s.kana)}</span>${badge}${th}</div>
       <div class="cmeta">${esc(s.pref)}／${esc(s.kura)}　精米 ${esc(s.seimai)}%　日本酒度 ${esc(s.sdo)}</div>
@@ -891,31 +898,30 @@ function card(s){
       <div class="rowbtns">
         ${!inStock&&can.qty()?`<button class="ghost" data-tostock="${s.id}">取扱いに追加</button>`:""}
         <button class="ghost" data-copy="${s.id}">内容をコピー</button>
-        ${String(s.id).startsWith("c")&&can.edit()?`<button class="ghost danger" data-del="${s.id}">銘柄を削除</button>`:""}
+        ${s.isCustom&&can.edit()?`<button class="ghost danger" data-del="${s.id}">銘柄を削除</button>`:""}
       </div>
     </div></article>`;
 }
 function summary(){
   const el=$("#invsum");
   if(state.tab!=="stock"){el.hidden=true;return;}
-  const d=accData();let bottles=0,kinds=0,value=0,low=0;
-  for(const [id,r] of Object.entries(d.inv)){
-    const s=findSake(id);if(!s)continue;
-    const n=qtyOf(id);if(n>0){bottles+=n;kinds++;}
+  let bottles=0,kinds=0,value=0,low=0;
+  for(const s of items()){
+    const e=s.entry;if(!e)continue;
+    const n=qtyOf(s);if(n>0){bottles+=n;kinds++;}
     for(const p of (s.prices||[])){
-      const q=Number(r.q[p[0]]||0);if(!q)continue;
-      value+=(Number(r.cost)||p[1]||0)*q;
+      const q=Number((e.qty||{})[p[0]]||0);if(!q)continue;
+      value+=(Number(e.cost)||p[1]||0)*q;
     }
-    const par=Number(r.par)||0;if(par&&n<par)low++;
+    const par=Number(e.par)||0;if(par&&n<par)low++;
   }
   el.hidden=false;
   el.innerHTML=`<div><dt>在庫本数</dt><dd>${bottles}</dd></div><div><dt>銘柄数</dt><dd>${kinds}</dd></div>
     <div><dt>在庫金額</dt><dd>${yen(value)}</dd></div><div><dt>発注点割れ</dt><dd class="${low?"warn":""}">${low}</dd></div>`;
 }
 function renderList(){
-  const d=accData();
-  let src=catalogOf();
-  if(state.tab==="stock")src=src.filter(s=>{const r=d.inv[s.id];return r&&(qtyOf(s.id)>0||r.menu);});
+  let src=items();
+  if(state.tab==="stock")src=src.filter(s=>s.entry&&(qtyOf(s)>0||s.entry.menu));
   const list=sortList(src.filter(match));
   $("#count").textContent=list.length+" 件";
   summary();
@@ -923,7 +929,7 @@ function renderList(){
   $("#rail").hidden=!useRail;$("#view").className=useRail?"hasrail":"";
   if(!list.length){
     $("#view").innerHTML=`<div class="empty"><b>${state.tab==="stock"?"表示する在庫がありません":"該当する銘柄がありません"}</b>
-      ${state.tab==="stock"?"一覧タブで銘柄を開き、「在庫に登録する」を押すとここに並びます。":"検索語を短くするか、条件を解除してください。"}</div>`;
+      ${state.tab==="stock"?"一覧タブで銘柄を開き、「取扱いに追加」を押すとここに並びます。":"検索語を短くするか、条件を解除してください。"}</div>`;
     $("#rail").innerHTML="";return;
   }
   let html="",cur="",used=new Set();
@@ -942,93 +948,89 @@ function bulkBar(){
 }
 
 /* ==================== 履歴 ==================== */
-function renderHistory(){
+async function renderHistory(){
   $("#rail").hidden=true;$("#view").className="";
-  const t=VAULT.trash.map((x,i)=>`<div class="row"><div class="g"><div class="t">${esc(x.label)}</div>
-    <div class="s">${esc(accName(x.acc))}／${new Date(x.t).toLocaleString("ja-JP")}／${esc(x.by)}</div></div>
-    ${can.edit()?`<button class="ghost" data-restore="${i}">復元</button>`:""}</div>`).join("")
-    ||`<p class="lead">削除された項目はありません。</p>`;
-  const logs=VAULT.log.map((l,i)=>`<div class="log ${esc(l.k)}"><div class="t">${esc(l.m)}</div>
-    <div class="m">${new Date(l.t).toLocaleString("ja-JP")}／${esc(l.u)}${l.undo?"":""}</div>
-    ${l.undo&&can.edit()?`<button class="ghost" data-undo="${i}" style="margin-top:6px">この操作を元に戻す</button>`:""}</div>`).join("")
-    ||`<p class="lead">記録はまだありません。</p>`;
-  $("#view").innerHTML=`
-    <div class="sec"><h2>ごみ箱</h2><p class="lead">削除した銘柄・在庫・アカウントはここに残ります。復元は管理以上が行えます。</p>${t}</div>
-    <div class="sec"><h2>操作の履歴</h2><p class="lead">直近600件まで記録します。「元に戻す」で変更前の状態に戻せます。</p>${logs}</div>`;
+  $("#view").innerHTML=`<p class="lead">読み込んでいます…</p>`;
+  const {data,error}=await sb.from("audit").select("*").eq("group_id",G.id).order("at",{ascending:false}).limit(200);
+  if(error){$("#view").innerHTML=`<p class="lead">${esc(errText(error))}</p>`;return;}
+  AUDIT=data||[];
+  const rows=AUDIT.map(a=>{
+    const label=a.label||"";
+    const nm=(a.after&&a.after.custom&&a.after.custom.name)||label;
+    const disp=/^b\d+$/.test(nm)?(BASE.find(b=>b.id===nm)||{}).name||nm:nm;
+    const act={add:"追加",set:"変更",del:"削除",restore:"復元",member:"メンバー"}[a.action]||a.action;
+    const q=a.after&&a.after.qty?Object.entries(a.after.qty).map(([k,v])=>k+"ml×"+v).join("・"):"";
+    return `<div class="log ${esc(a.action)}"><div class="t">${esc(disp)}　<span style="color:var(--dim2);font-size:11px">${act}${q?"（"+esc(q)+"）":""}</span></div>
+      <div class="m">${new Date(a.at).toLocaleString("ja-JP")}／${esc(a.actor_name||"")}／${esc(accName(a.account_id)||"")}</div>
+      ${(a.entry_id&&can.edit())?`<button class="ghost" data-restore="${a.id}" style="margin-top:6px">この時点に戻す</button>`:""}</div>`;
+  }).join("")||`<p class="lead">記録はまだありません。</p>`;
+  $("#view").innerHTML=`<div class="sec"><h2>操作の履歴</h2>
+    <p class="lead">グループ全員の操作をサーバー側で自動記録しています。直近200件を表示。「この時点に戻す」で変更前の内容に復元できます（管理以上）。</p>${rows}</div>`;
 }
 
 /* ==================== 設定 ==================== */
-function renderSettings(){
+async function renderSettings(){
   $("#rail").hidden=true;$("#view").className="";
-  const accs=VAULT.accounts.map(a=>{
-    const d=VAULT.data[a.id]||{inv:{}};
-    const n=Object.keys(d.inv).length;
-    return `<div class="row"><div class="g"><div class="t">${esc(a.name)}</div><div class="s">登録 ${n} 銘柄</div></div>
+  const {data:ms}=await sb.from("memberships").select("user_id,role").eq("group_id",G.id);
+  MEMBERS=ms||[];
+  const ids=MEMBERS.map(m=>m.user_id);
+  let profs=[];
+  if(ids.length){const {data}=await sb.from("profiles").select("id,name,email").in("id",ids);profs=data||[];}
+  const memHtml=MEMBERS.map(m=>{
+    const p=profs.find(x=>x.id===m.user_id)||{};
+    const nm=p.name||p.email||"(不明)";
+    return `<div class="row"><div class="avatar">${esc((nm[0]||"?"))}</div>
+      <div class="g"><div class="t">${esc(nm)}${m.user_id===ME.id?"（自分）":""}</div><div class="s">${esc(p.email||"")}</div></div>
+      <span class="role ${esc(m.role)}">${ROLES[m.role].label}</span>
+      ${(can.host()&&m.user_id!==ME.id)?`<button class="ghost" data-urole="${m.user_id}">権限</button><button class="ghost danger" data-udel="${m.user_id}">外す</button>`:""}</div>`;
+  }).join("");
+  const accHtml=ACCOUNTS.map(a=>{
+    const n=ENTRIES.filter(e=>e.account_id===a.id).length;
+    return `<div class="row"><div class="g"><div class="t">${esc(a.name)}</div><div class="s">登録 ${n} 件</div></div>
       ${can.edit()?`<button class="ghost" data-rename="${a.id}">名称変更</button>`:""}
-      ${can.host()&&VAULT.accounts.length>1?`<button class="ghost danger" data-accdel="${a.id}">削除</button>`:""}</div>`;}).join("");
-  const users=SHELL.users.map(u=>`<div class="row"><div class="g"><div class="t">${esc(u.name)}${u.id===ME.id?"（自分）":""}</div>
-      <div class="s">${u.id===ME.id?"パスワードは自分で変更できます":"パスワードはご本人のみ変更できます"}</div></div>
-      <span class="role ${esc(u.role)}">${ROLES[u.role].label}</span>
-      ${u.id===ME.id?`<button class="ghost" data-mypw="1">変更</button>`:""}
-      ${can.host()&&u.id!==ME.id?`<button class="ghost" data-urole="${u.id}">権限</button><button class="ghost danger" data-udel="${u.id}">削除</button>`:""}</div>`).join("");
+      ${(can.host()&&ACCOUNTS.length>1)?`<button class="ghost danger" data-accdel="${a.id}">削除</button>`:""}</div>`;
+  }).join("");
   $("#view").innerHTML=`
-    <div class="sec"><h2>アカウント</h2><p class="lead">個人用・店舗ごとに在庫を分けて管理します。切替はヘッダーの選択欄から。</p>
-      ${accs}${can.edit()?`<button class="ghost" id="accadd" style="margin-top:6px">アカウントを追加</button>`:""}</div>
-    <div class="sec"><h2>利用者と権限</h2><p class="lead">ホスト＞管理＞従業員＞閲覧のみ。従業員は在庫の増減・メモ・保管場所のみ変更できます。</p>
-      ${users}${can.host()?`<button class="ghost" id="useradd" style="margin-top:6px">利用者を追加</button>`:""}</div>
-    <div class="sec"><h2>銘柄の追加</h2><p class="lead">現在のアカウント「${esc(accName(state.acc))}」に登録されます。</p>
-      <div class="rowbtns">${can.edit()?`<button class="ghost" id="photobtn">写真から追加</button><button class="ghost" id="addbtn">手入力で追加</button>`:`<p class="lead">追加は管理以上の権限が必要です。</p>`}</div></div>
-    <div class="sec"><h2>控えと引き継ぎ</h2><p class="lead">書き出したファイルは暗号化されたままです。読み込む端末でも同じパスワードが必要になります。</p>
-      <div class="rowbtns"><button class="ghost" id="expbtn">書き出し</button>
-      ${can.host()?`<button class="ghost" id="impbtn">読み込み（全体を置き換え）</button>`:""}
-      <button class="ghost" id="installbtn">ホーム画面に追加</button></div></div>
-    <div class="sec"><h2>自動ロック</h2><p class="lead">操作がないまま指定した時間が経つと自動でログアウトします。0で無効。</p>
-      <div class="row"><div class="g"><input id="lockmin" type="number" min="0" max="240" value="${(VAULT.settings&&VAULT.settings.lockMin)??15}" style="width:90px;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:8px"> 分</div>
-      <button class="ghost" id="lockset">保存</button></div></div>
-    <div class="sec"><h2>安全性について</h2>
-      <div class="hint">データはパスワードから作った鍵で暗号化し、この端末の中だけに保存しています。外部には一切送信しません。<br><br>
-      <b>できること</b>：パスワードを知らない人がデータを読むことは防げます。<br>
-      <b>できないこと</b>：このアプリは各端末で単独動作するため、開発者ツールを扱える人物が権限表示を書き換える可能性までは防げません。金銭に直結する運用では、定期的な書き出しと履歴の確認を併用してください。<br><br>
-      パスワードを失うと復元できません。ホストは必ず控えを保管してください。</div></div>`;
-  bind();
+    <div class="sec"><h2>グループ「${esc(G.name)}」</h2>
+      <p class="lead">あなたの権限：${ROLES[G.role].label}／メールアドレス：${esc(ME.email)}</p>
+      <div class="rowbtns">
+        ${can.edit()?`<button class="ghost" id="invbtn">招待リンクを発行</button>`:""}
+        <button class="ghost" id="newgrp">別のグループを作る</button>
+        <button class="ghost" id="installbtn">ホーム画面に追加</button>
+      </div></div>
+    <div class="sec"><h2>メンバー</h2>
+      <p class="lead">ホスト＞管理＞従業員＞閲覧のみ。権限はサーバー側でも確認され、従業員が仕入値や銘柄を書き換えようとしても拒否されます。</p>${memHtml}</div>
+    <div class="sec"><h2>アカウント</h2>
+      <p class="lead">個人用・店舗ごとに在庫を分けます。切替はヘッダーの2段目から。</p>${accHtml}
+      ${can.edit()?`<button class="ghost" id="accadd" style="margin-top:6px">アカウントを追加</button>`:""}</div>
+    <div class="sec"><h2>銘柄の追加</h2>
+      <p class="lead">現在のアカウント「${esc(accName(state.acc))}」に登録されます。</p>
+      <div class="rowbtns">${can.edit()?`<button class="ghost" id="photobtn">写真から追加</button><button class="ghost" id="addbtn">手入力で追加</button>`:`<span class="lead">追加は管理以上の権限が必要です。</span>`}</div></div>
+    <div class="sec"><h2>この端末</h2>
+      <div class="rowbtns"><button class="ghost" id="reloadbtn">最新に更新</button><button class="ghost" id="cfgbtn">接続先を変更</button><button class="ghost danger" id="outbtn2">ログアウト</button></div></div>`;
+  bindSettings();
 }
-function bind(){
+function bindSettings(){
   const on=(id,fn)=>{const e=$("#"+id);if(e)e.addEventListener("click",fn);};
-  on("accadd",async()=>{
-    const n=prompt("新しいアカウント名を入力してください（例：日の出茶屋）");
-    if(!n||!n.trim())return;
-    const a={id:uid("a"),name:n.trim()};
-    VAULT.accounts.push(a);VAULT.data[a.id]={custom:[],inv:{}};
-    logAct("add","アカウント「"+a.name+"」を追加");
-    await saveVault();buildAccSel();render();
+  on("invbtn",()=>{$("#iv_out").hidden=true;$("#iv_btns").hidden=true;$("#dlgInvite").showModal();});
+  on("newgrp",async()=>{
+    const n=prompt("新しいグループ名（例：日の出茶屋）");if(!n||!n.trim())return;
+    const {error}=await sb.rpc("create_group",{p_name:n.trim()});
+    if(error)return alert(errText(error));
+    await loadGroups();
   });
-  on("useradd",()=>{$("#du_save").dataset.mode="new";$("#du_title").textContent="利用者を追加";$("#dlgUser").showModal();});
+  on("accadd",async()=>{
+    const n=prompt("新しいアカウント名（例：店舗1）");if(!n||!n.trim())return;
+    const a=await addAccount(n.trim());if(a){buildAccSel();render();}
+  });
   on("photobtn",()=>$("#dlgPhoto").showModal());
   on("addbtn",()=>$("#dlgAdd").showModal());
   on("installbtn",()=>$("#dlgInstall").showModal());
-  on("expbtn",()=>{
-    const blob=new Blob([JSON.stringify(SHELL)],{type:"application/json"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
-    a.download="sakecho-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();
-  });
-  on("impbtn",()=>{if(confirm("読み込むと、この端末の利用者・在庫・履歴はすべて置き換わります。よろしいですか？"))$("#impfile").click();});
-  on("lockset",async()=>{
-    const v=Math.max(0,Math.min(240,Number($("#lockmin").value)||0));
-    VAULT.settings.lockMin=v;logAct("set","自動ロックを"+v+"分に設定");await saveVault();resetIdle();
-    alert("保存しました");
-  });
+  on("reloadbtn",async()=>{await Promise.all([loadAccounts(),loadEntries()]);sync("更新しました");render();});
+  on("cfgbtn",()=>{if(confirm("接続先の設定を消して入力し直しますか？"))
+    {localStorage.removeItem(CFGK);location.reload();}});
+  on("outbtn2",signOut);
 }
-$("#impfile").addEventListener("change",async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{
-    const d=JSON.parse(await f.text());
-    if(!d||!d.users||!d.users.length)throw 0;
-    await store.set(VKEY,d);
-    alert("読み込みました。読み込んだデータのパスワードでログインしてください。");
-    SHELL=d;lock();
-  }catch(_){alert("読み込めませんでした。書き出したファイルを選んでください。");}
-  e.target.value="";
-});
 
 /* ==================== 画面切替 ==================== */
 function render(){
@@ -1036,44 +1038,47 @@ function render(){
   $("#searchrow").hidden=!listView;$("#filters").hidden=!listView;
   $("#stockg").hidden=(state.tab!=="stock");
   if(!listView){$("#invsum").hidden=true;$("#bulk").classList.remove("on");}
-  if(state.tab==="catalog"||state.tab==="stock")renderList();
+  if(listView)renderList();
   else if(state.tab==="history")renderHistory();
   else renderSettings();
 }
 
 /* ==================== 操作 ==================== */
-$("#view").addEventListener("click",async e=>{
-  const t=e.target;
+$("#view").addEventListener("click",async ev=>{
+  const t=ev.target;
   const pick=t.dataset.pick;
   if(pick!==undefined&&t.type==="checkbox"){
     t.checked?state.sel.add(pick):state.sel.delete(pick);
-    document.getElementById(pick).classList.toggle("sel",t.checked);bulkBar();return;
+    document.getElementById("c-"+pick).classList.toggle("sel",t.checked);bulkBar();return;
   }
   const q=t.dataset.q;
   if(q){
     if(!can.qty())return;
     const[id,vol,d]=q.split("|");
-    const r=invRec(id,true);const before=JSON.parse(JSON.stringify(r));
-    r.q[vol]=Math.max(0,(Number(r.q[vol])||0)+Number(d));
-    const s=findSake(id);
-    logAct("qty",`${s?s.name:id}（${vol}ml）を ${before.q[vol]||0} → ${r.q[vol]} 本`,{k:"inv",acc:state.acc,id,rec:before});
-    await saveVault();
-    t.parentElement.querySelector(".qty").textContent=r.q[vol];
-    const n=qtyOf(id),par=Number(r.par)||0,b=document.getElementById(id).querySelector(".stock");
+    const it=items().find(x=>x.id===id);if(!it)return;
+    const e=await ensureEntry(it);if(!e)return;
+    const nq=Object.assign({},e.qty||{});
+    nq[vol]=Math.max(0,(Number(nq[vol])||0)+Number(d));
+    t.disabled=true;
+    const r=await patch(e,{qty:nq});
+    t.disabled=false;
+    if(!r)return;
+    t.parentElement.querySelector(".qty").textContent=nq[vol];
+    const n=qtyOf(it),par=Number(e.par)||0,b=document.getElementById("c-"+id).querySelector(".stock");
     if(b){b.textContent="在庫 "+n;b.className="stock"+(n===0?" zero":((par&&n<par)||(!par&&n<=1)?" low":""));}
-    summary();return;
+    summary();sync("保存しました");return;
   }
   const ts=t.dataset.tostock;
   if(ts){
     if(!can.qty())return;
-    const r=invRec(ts,true);r.menu=true;
-    const s=findSake(ts);
-    logAct("add",`${s?s.name:ts} を取扱いに追加`,{k:"inv",acc:state.acc,id:ts,rec:null});
-    await saveVault();t.textContent="在庫タブに追加しました";return;
+    const it=items().find(x=>x.id===ts);if(!it)return;
+    const e=await ensureEntry(it);if(!e)return;
+    if(!e.menu)await patch(e,{menu:true});
+    t.textContent="在庫タブに追加しました";return;
   }
   const cp=t.dataset.copy;
   if(cp){
-    const s=findSake(cp);if(!s)return;
+    const s=items().find(x=>x.id===cp);if(!s)return;
     const txt=`${s.name}（${s.kana}）\n${(s.tags||[]).join("・")}／精米${s.seimai}%／日本酒度${s.sdo}／甘辛${s.ak}\n${s.pref}・${s.kura}\n`+
       (s.prices||[]).map(p=>`${p[0]}ml ${p[1]?yen(p[1]):""}${p[2]?" "+p[2]:""}`).join("\n")+`\n${s.desc||""}`;
     try{await navigator.clipboard.writeText(txt);t.textContent="コピーしました";setTimeout(()=>t.textContent="内容をコピー",1400);}catch(_){}
@@ -1082,111 +1087,73 @@ $("#view").addEventListener("click",async e=>{
   const del=t.dataset.del;
   if(del){
     if(!can.edit())return;
-    const d=accData(),i=d.custom.findIndex(x=>x.id===del);if(i<0)return;
-    const item=d.custom[i],rec=d.inv[del]||null;
-    if(!confirm(`「${item.name}」を削除します。ごみ箱から復元できます。`))return;
-    VAULT.trash.unshift({t:Date.now(),by:ME.name,acc:state.acc,label:"銘柄："+item.name,payload:{item,rec}});
-    d.custom.splice(i,1);delete d.inv[del];
-    logAct("del","銘柄「"+item.name+"」を削除",null);
-    await saveVault();buildSelects();render();return;
+    const it=items().find(x=>x.id===del);if(!it||!it.entry)return;
+    if(!confirm(`「${it.name}」を削除します。履歴から復元できます。`))return;
+    const r=await patch(it.entry,{deleted_at:new Date().toISOString()});
+    if(r){ENTRIES=ENTRIES.filter(e=>e.id!==it.entry.id);buildSelects();render();}
+    return;
   }
   const rs=t.dataset.restore;
-  if(rs!==undefined){
+  if(rs){
     if(!can.edit())return;
-    const x=VAULT.trash[Number(rs)];if(!x)return;
-    const d=VAULT.data[x.acc]||(VAULT.data[x.acc]={custom:[],inv:{}});
-    if(x.payload.account){
-      VAULT.accounts.push(x.payload.account);VAULT.data[x.payload.account.id]=x.payload.data;
-    }else{
-      const it=x.payload.item;
-      if(it&&it.name&&!d.custom.some(c=>c.id===it.id))d.custom.push(it);
-      if(x.payload.rec&&it)d.inv[it.id]=x.payload.rec;
-    }
-    VAULT.trash.splice(Number(rs),1);
-    logAct("add",x.label+" を復元");
-    await saveVault();buildAccSel();buildSelects();render();return;
-  }
-  const un=t.dataset.undo;
-  if(un!==undefined){
-    if(!can.edit())return;
-    const l=VAULT.log[Number(un)];if(!l||!l.undo)return;
-    const u=l.undo;
-    if(u.k==="inv"){
-      const d=VAULT.data[u.acc];if(!d)return;
-      if(u.rec)d.inv[u.id]=u.rec;else delete d.inv[u.id];
-    }else if(u.k==="accName"){
-      const a=VAULT.accounts.find(x=>x.id===u.acc);if(a)a.name=u.name;
-    }else if(u.k==="move"){
-      const from=VAULT.data[u.to],to=VAULT.data[u.from];
-      if(from&&to)for(const id of u.ids){if(from.inv[id]){to.inv[id]=from.inv[id];delete from.inv[id];}}
-    }
-    logAct("add","「"+l.m+"」を元に戻しました");
-    await saveVault();buildAccSel();render();return;
+    const {error}=await sb.rpc("restore_entry",{p_audit:Number(rs)});
+    if(error)return alert(errText(error));
+    await loadEntries();sync("復元しました");renderHistory();return;
   }
   const rn=t.dataset.rename;
   if(rn){
-    if(!can.edit())return;
-    const a=VAULT.accounts.find(x=>x.id===rn);if(!a)return;
+    const a=ACCOUNTS.find(x=>x.id===rn);if(!a)return;
     const n=prompt("新しいアカウント名",a.name);if(!n||!n.trim())return;
-    const before=a.name;a.name=n.trim();
-    logAct("set",`アカウント名を「${before}」→「${a.name}」に変更`,{k:"accName",acc:a.id,name:before});
-    await saveVault();buildAccSel();render();return;
+    const {data,error}=await sb.from("accounts").update({name:n.trim()}).eq("id",rn).select().single();
+    if(error)return alert(errText(error));
+    Object.assign(a,data);buildAccSel();render();return;
   }
   const ad=t.dataset.accdel;
   if(ad){
-    if(!can.host())return;
-    const a=VAULT.accounts.find(x=>x.id===ad);if(!a)return;
-    if(!confirm(`アカウント「${a.name}」を削除します。中身ごとごみ箱に入り、復元できます。`))return;
-    VAULT.trash.unshift({t:Date.now(),by:ME.name,acc:ad,label:"アカウント："+a.name,payload:{account:a,data:VAULT.data[ad]}});
-    VAULT.accounts=VAULT.accounts.filter(x=>x.id!==ad);delete VAULT.data[ad];
-    if(state.acc===ad)state.acc=VAULT.accounts[0].id;
-    logAct("del","アカウント「"+a.name+"」を削除");
-    await saveVault();buildAccSel();buildSelects();render();return;
+    const a=ACCOUNTS.find(x=>x.id===ad);if(!a)return;
+    if(!confirm(`アカウント「${a.name}」を削除します。中の在庫も一覧から消えます（履歴には残ります）。`))return;
+    const {error}=await sb.from("accounts").update({deleted_at:new Date().toISOString()}).eq("id",ad);
+    if(error)return alert(errText(error));
+    await Promise.all([loadAccounts(),loadEntries()]);
+    if(state.acc===ad)state.acc=(ACCOUNTS[0]||{}).id||"";
+    buildAccSel();buildSelects();render();return;
   }
-  if(t.dataset.mypw){$("#dp_oldwrap").hidden=false;$("#dp_save").dataset.uid=ME.id;$("#dlgPw").showModal();return;}
   const ur=t.dataset.urole;
   if(ur){
-    if(!can.host())return;
-    const u=SHELL.users.find(x=>x.id===ur);if(!u)return;
-    const r=prompt("権限を入力してください（admin／staff／viewer）",u.role);
-    if(!r||!["admin","staff","viewer"].includes(r))return;
-    const before=u.role;u.role=r;
-    logAct("set",`${u.name} の権限を ${ROLES[before].label} → ${ROLES[r].label} に変更`);
-    await saveVault();render();return;
+    const r=prompt("権限を入力してください（host／admin／staff／viewer）","staff");
+    if(!r||!["host","admin","staff","viewer"].includes(r))return;
+    const {error}=await sb.rpc("set_member_role",{p_group:G.id,p_user:ur,p_role:r});
+    if(error)return alert(errText(error));
+    renderSettings();return;
   }
   const ud=t.dataset.udel;
   if(ud){
-    if(!can.host())return;
-    const u=SHELL.users.find(x=>x.id===ud);if(!u)return;
-    if(!confirm(`利用者「${u.name}」を削除します。この人はログインできなくなります。`))return;
-    SHELL.users=SHELL.users.filter(x=>x.id!==ud);
-    logAct("del","利用者「"+u.name+"」を削除");
-    await saveVault();render();return;
+    if(!confirm("このメンバーをグループから外します。よろしいですか？"))return;
+    const {error}=await sb.rpc("remove_member",{p_group:G.id,p_user:ud});
+    if(error)return alert(errText(error));
+    renderSettings();return;
   }
   const head=t.closest(".chead");
-  if(head&&t.type!=="checkbox"){document.getElementById(head.dataset.id).classList.toggle("open");}
+  if(head&&t.type!=="checkbox")document.getElementById("c-"+head.dataset.id).classList.toggle("open");
 });
-$("#view").addEventListener("change",async e=>{
-  const t=e.target;
+$("#view").addEventListener("change",async ev=>{
+  const t=ev.target;
   const iv=t.dataset.inv;
   if(iv){
     const[id,k]=iv.split("|");
-    if((k==="cost"||k==="sell"||k==="par")&&!can.edit())return;
-    if(!can.qty())return;
-    const r=invRec(id,true),before=JSON.parse(JSON.stringify(r));
-    r[k]=t.value.trim();
-    const s=findSake(id);
-    logAct("set",`${s?s.name:id} の項目を更新`,{k:"inv",acc:state.acc,id,rec:before});
-    await saveVault();summary();return;
+    const it=items().find(x=>x.id===id);if(!it||!it.entry)return;
+    const v=t.value.trim();
+    const val=(k==="cost"||k==="sell"||k==="par")?(v===""?null:Number(v)):v;
+    const r=await patch(it.entry,{[k]:val});
+    if(r){summary();sync("保存しました");}
+    return;
   }
   const mn=t.dataset.menu;
   if(mn){
-    if(!can.edit())return;
-    const r=invRec(mn,true),before=JSON.parse(JSON.stringify(r));
-    r.menu=t.checked;
-    const s=findSake(mn);
-    logAct("set",`${s?s.name:mn} のメニュー掲載を${t.checked?"開始":"解除"}`,{k:"inv",acc:state.acc,id:mn,rec:before});
-    await saveVault();return;
+    const it=items().find(x=>x.id===mn);if(!it||!it.entry)return;
+    const r=await patch(it.entry,{menu:t.checked});
+    if(r)sync("保存しました");
+    return;
   }
 });
 
@@ -1196,71 +1163,45 @@ $("#bulkmove").addEventListener("click",()=>bulkMove(true));
 $("#bulkcopy").addEventListener("click",()=>bulkMove(false));
 async function bulkMove(move){
   if(!can.edit()||!state.sel.size)return;
-  const to=$("#bulkacc").value;if(!to)return alert("移動先のアカウントがありません。設定画面で追加してください。");
-  const from=state.acc,src=VAULT.data[from],dst=VAULT.data[to];
-  const ids=[...state.sel];
-  for(const id of ids){
-    if(String(id).startsWith("c")){
-      const item=src.custom.find(c=>c.id===id);
-      if(item&&!dst.custom.some(c=>c.id===id))dst.custom.push(JSON.parse(JSON.stringify(item)));
-      if(move)src.custom=src.custom.filter(c=>c.id!==id);
-    }
-    if(src.inv[id]){
-      dst.inv[id]=JSON.parse(JSON.stringify(src.inv[id]));
-      if(move)delete src.inv[id];
+  const to=$("#bulkacc").value;
+  if(!to)return alert("移動先のアカウントがありません。設定画面で追加してください。");
+  const L=items();
+  for(const id of [...state.sel]){
+    const it=L.find(x=>x.id===id);if(!it||!it.entry)continue;
+    if(move){
+      await patch(it.entry,{account_id:to});
+    }else{
+      const e=it.entry;
+      const {error}=await sb.from("entries").insert({group_id:G.id,account_id:to,ref:e.ref,custom:e.custom,
+        qty:e.qty,cost:e.cost,sell:e.sell,par:e.par,loc:e.loc,memo:e.memo,menu:e.menu,photo:e.photo});
+      if(error){alert(errText(error));break;}
     }
   }
-  logAct("set",`${ids.length}件を「${accName(from)}」から「${accName(to)}」へ${move?"移動":"複製"}`,
-    move?{k:"move",from,to,ids}:null);
-  state.sel.clear();await saveVault();buildSelects();render();
+  state.sel.clear();await loadEntries();buildSelects();sync(move?"移動しました":"複製しました");render();
 }
 $("#bulkdel").addEventListener("click",async()=>{
   if(!can.edit()||!state.sel.size)return;
-  if(!confirm(state.sel.size+"件を在庫一覧から外します。ごみ箱から復元できます。"))return;
-  const d=accData();
-  for(const id of state.sel){
-    const s=findSake(id);
-    if(d.inv[id]){
-      VAULT.trash.unshift({t:Date.now(),by:ME.name,acc:state.acc,label:"在庫："+(s?s.name:id),
-        payload:{item:{id},rec:JSON.parse(JSON.stringify(d.inv[id]))}});
-      delete d.inv[id];
-    }
+  if(!confirm(state.sel.size+"件を在庫一覧から外します。履歴から復元できます。"))return;
+  const L=items();
+  for(const id of [...state.sel]){
+    const it=L.find(x=>x.id===id);if(!it||!it.entry)continue;
+    await patch(it.entry,{deleted_at:new Date().toISOString()});
   }
-  logAct("del",state.sel.size+"件を在庫から削除");
-  state.sel.clear();await saveVault();render();
+  state.sel.clear();await loadEntries();render();
 });
 
-/* ==================== 利用者・パスワード ==================== */
-$("#du_save").addEventListener("click",async()=>{
-  const name=$("#du_name").value.trim(),role=$("#du_role").value,pw=$("#du_pw").value,m=$("#du_msg");
-  if(!can.host())return;
-  if(!name)return toast("利用者名を入れてください",m);
-  if(SHELL.users.some(u=>u.name===name))return toast("同じ名前の利用者がいます",m);
-  if(pw.length<8)return toast("パスワードは8文字以上にしてください",m);
-  toast("作成しています…",m,true);
-  const salt=rand(16),key=await pwKey(pw,salt);
-  const wrap=await seal(key,MASTERRAW);
-  SHELL.users.push({id:uid("u"),name,role,salt:b64(salt),wrap});
-  logAct("add",`利用者「${name}」（${ROLES[role].label}）を追加`);
-  await saveVault();
-  $("#du_name").value="";$("#du_pw").value="";$("#dlgUser").close();render();
+/* ==================== 招待 ==================== */
+$("#iv_go").addEventListener("click",async()=>{
+  const role=$("#iv_role").value,days=Number($("#iv_days").value)||7,uses=Number($("#iv_uses").value)||1;
+  const {data,error}=await sb.rpc("create_invite",{p_group:G.id,p_role:role,p_days:days,p_uses:uses});
+  if(error)return alert(errText(error));
+  const url=location.origin+location.pathname+"#invite="+data;
+  const out=$("#iv_out");out.hidden=false;out.textContent=url;
+  $("#iv_btns").hidden=false;$("#iv_copy").dataset.url=url;
 });
-$("#dp_save").addEventListener("click",async()=>{
-  const m=$("#dp_msg"),id=$("#dp_save").dataset.uid;
-  const u=SHELL.users.find(x=>x.id===id);if(!u)return;
-  const old=$("#dp_old").value,a=$("#dp_new").value,b=$("#dp_new2").value;
-  if(a.length<8)return toast("新しいパスワードは8文字以上にしてください",m);
-  if(a!==b)return toast("確認用が一致しません",m);
-  try{
-    const ok=await pwKey(old,ub64(u.salt));
-    await open_(ok,u.wrap);
-  }catch(_){return toast("現在のパスワードが違います",m);}
-  const salt=rand(16),key=await pwKey(a,salt);
-  u.salt=b64(salt);u.wrap=await seal(key,MASTERRAW);
-  logAct("set","パスワードを変更しました");
-  await saveVault();
-  $("#dp_old").value="";$("#dp_new").value="";$("#dp_new2").value="";
-  $("#dlgPw").close();alert("変更しました");
+$("#iv_copy").addEventListener("click",async e=>{
+  try{await navigator.clipboard.writeText(e.target.dataset.url);e.target.textContent="コピーしました";
+    setTimeout(()=>e.target.textContent="リンクをコピー",1500);}catch(_){}
 });
 document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",e=>e.target.closest("dialog").close()));
 
@@ -1272,16 +1213,18 @@ $("#f_save").addEventListener("click",async()=>{
   const prices=g("f_price").split("\n").filter(Boolean).map(l=>{
     const m=l.match(/(\d+)\s*ml?\D*(\d[\d,]*)?/i);
     return m?[Number(m[1]),m[2]?Number(m[2].replace(/,/g,"")):null]:null;}).filter(Boolean);
-  const item={id:uid("c"),name:g("f_name"),kana:g("f_kana")||g("f_name"),
+  const custom={name:g("f_name"),kana:g("f_kana")||g("f_name"),
     tags:g("f_tags").split(/[,、]/).map(s=>s.trim()).filter(Boolean),
     seimai:Number(g("f_seimai"))||"—",sdo:g("f_sdo")||"—",
     ak:Math.min(10,Math.max(1,Number(g("f_ak"))||5)),pref:g("f_pref")||"—",kura:g("f_kura")||"—",
     prices,desc:g("f_desc"),rare:0};
-  accData().custom.push(item);
-  logAct("add",`銘柄「${item.name}」を「${accName(state.acc)}」に追加`);
-  await saveVault();
+  const {data,error}=await sb.from("entries")
+    .insert({group_id:G.id,account_id:state.acc,ref:"custom",custom,qty:{},menu:true}).select().single();
+  if(error)return msg("#f_msg",errText(error));
+  ENTRIES.push(data);
   ["f_name","f_kana","f_tags","f_seimai","f_sdo","f_ak","f_pref","f_kura","f_price","f_desc"].forEach(i=>$("#"+i).value="");
-  $("#dlgAdd").close();buildSelects();state.tab="catalog";
+  $("#dlgAdd").close();buildSelects();
+  state.tab="catalog";
   document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-current",x.dataset.tab==="catalog"));
   render();
 });
@@ -1314,9 +1257,9 @@ function sdToAk(sd){
 }
 function parseLabel(txt){
   const t=txt.replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-65248)).replace(/％/g,"%");
-  const hit=catalogOf().find(s=>t.includes(s.name));
-  const o=hit?JSON.parse(JSON.stringify(hit)):{name:"",kana:"",tags:[],seimai:"—",sdo:"—",ak:5,pref:"—",kura:"—",prices:[],desc:""};
-  if(hit)o.matched=hit.name;
+  const hit=items().find(s=>t.includes(s.name));
+  const o=hit?JSON.parse(JSON.stringify({name:hit.name,kana:hit.kana,tags:hit.tags,seimai:hit.seimai,sdo:hit.sdo,ak:hit.ak,pref:hit.pref,kura:hit.kura,prices:hit.prices,desc:hit.desc}))
+    :{name:"",kana:"",tags:[],seimai:"—",sdo:"—",ak:5,pref:"—",kura:"—",prices:[],desc:""};
   let tags=[...new Set(TAGWORDS.filter(w=>t.includes(w)).map(w=>w==="山廃"?"山廃仕込み":w))];
   tags=tags.filter(w=>!tags.some(v=>v!==w&&v.includes(w)));
   if(tags.length)o.tags=tags;
@@ -1333,45 +1276,41 @@ function parseLabel(txt){
     const u=[...new Set(vols)];
     o.prices=u.map(v=>{const old=((hit&&hit.prices)||[]).find(p=>p[0]===v);return old?old.slice():[v,null];});
   }
-  if(!o.name){
-    o.name=(t.split(/[\n、,]/).map(x=>x.trim()).filter(x=>x.length>=2&&x.length<=12&&/[一-龥ぁ-んァ-ヶ]/.test(x)&&!TAGWORDS.includes(x))[0])||"";
-  }
+  if(!o.name)o.name=(t.split(/[\n、,]/).map(x=>x.trim()).filter(x=>x.length>=2&&x.length<=12&&/[一-龥ぁ-んァ-ヶ]/.test(x)&&!TAGWORDS.includes(x))[0])||"";
   return o;
 }
 $("#ph_read").addEventListener("click",async()=>{
   if(!can.edit())return;
   const raw=$("#ph_text").value.trim(),out=$("#ph_out");
   if(!raw)return $("#ph_text").focus();
-  const d=accData();let added=[];
+  let list=[];
   try{
     const j=JSON.parse(raw.replace(/^```(?:json)?|```$/g,"").trim());
     const arr=Array.isArray(j)?j:[j];
-    for(const x of arr){
-      const item=Object.assign({kana:"",tags:[],seimai:"—",sdo:"—",pref:"—",kura:"—",prices:[],desc:"",rare:0},x,
-        {id:uid("c"),tags:[].concat(x.tags||[]),ak:Number(x.ak)||sdToAk(x.sdo)});
-      item.kana=item.kana||item.name;
-      d.custom.push(item);added.push(item);
-    }
+    list=arr.map(x=>Object.assign({kana:"",tags:[],seimai:"—",sdo:"—",pref:"—",kura:"—",prices:[],desc:"",rare:0},x,
+      {tags:[].concat(x.tags||[]),ak:Number(x.ak)||sdToAk(x.sdo)}));
   }catch(_){
     const o=parseLabel(raw);
     if(!o.name){out.hidden=false;out.textContent="銘柄名を読み取れませんでした。文字をもう少し多く貼り付けるか、手入力で追加してください。";return;}
-    o.id=uid("c");o.kana=o.kana||o.name;o.rare=0;delete o.matched;
-    d.custom.push(o);added.push(o);
+    list=[o];
   }
-  if(photoData&&added.length){
-    const r=invRec(added[0].id,true);r.photo=photoData;
+  for(const c of list){
+    c.kana=c.kana||c.name;
+    const row={group_id:G.id,account_id:state.acc,ref:"custom",custom:c,qty:{},menu:true};
+    if(photoData)row.photo=photoData;
+    const {data,error}=await sb.from("entries").insert(row).select().single();
+    if(error){out.hidden=false;out.textContent=errText(error);return;}
+    ENTRIES.push(data);
   }
-  logAct("add",`写真・文字から ${added.length}件を「${accName(state.acc)}」に追加`);
-  await saveVault();
-  out.hidden=false;out.textContent=`「${added.map(a=>a.name).join("、")}」を追加しました`;
+  out.hidden=false;out.textContent=`「${list.map(a=>a.name).join("、")}」を追加しました`;
   $("#ph_text").value="";$("#ph_file").value="";$("#ph_prev").hidden=true;photoData="";
   buildSelects();render();
 });
 
-/* ==================== 起動 ==================== */
-boot();
+/* ==================== PWA ==================== */
 try{
-  const m={name:"酒帖",short_name:"酒帖",display:"standalone",background_color:"#101317",theme_color:"#101317",start_url:location.href,
+  const m={name:"酒帖",short_name:"酒帖",display:"standalone",background_color:"#101317",theme_color:"#101317",
+    start_url:location.origin+location.pathname,
     icons:[{src:"data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#101317"/><text x="50%" y="58%" font-family="serif" font-size="300" fill="#EFE9DC" text-anchor="middle">酒</text></svg>`))),
       sizes:"512x512",type:"image/svg+xml"}]};
