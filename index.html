@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="酒帖">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 
 :root{
@@ -203,6 +203,14 @@ h3.dt:first-child{margin-top:0}
 .authtabs button{flex:1;background:var(--sumi);border:1px solid var(--line);border-radius:2px;padding:9px;font-size:13px;color:var(--dim)}
 .authtabs button[aria-pressed="true"]{background:var(--washi);border-color:var(--washi);color:var(--sumi);font-weight:700}
 .sync{font-size:10.5px;color:var(--dim2);margin-left:auto}
+.offbar{position:fixed;left:0;right:0;top:0;z-index:60;background:var(--kin);color:#1A1408;
+  font-size:12px;letter-spacing:.04em;text-align:center;padding:5px 10px;font-weight:700;display:none}
+.offbar.on{display:block}
+body.offline header{top:24px}
+body.offline{padding-top:24px}
+.pend{display:inline-block;background:var(--kin);color:#1A1408;border-radius:8px;font-size:10.5px;
+  padding:1px 7px;margin-left:6px;font-weight:700}
+.ro{opacity:.5;pointer-events:none}
 .photos{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 11px}
 .photos img{width:64px;height:64px;object-fit:cover;border:1px solid var(--line);border-radius:2px;cursor:zoom-in}
 .photos .addp{width:64px;height:64px;border:1px dashed var(--line);border-radius:2px;background:none;color:var(--dim2);font-size:11px;line-height:1.3}
@@ -220,6 +228,8 @@ h3.dt:first-child{margin-top:0}
 </style>
 </head>
 <body>
+
+<div class="offbar" id="offbar">オフラインです — 変更は端末に保存し、接続が戻ったら自動で送信します</div>
 
 <!-- ============ 接続設定 ============ -->
 <div id="gate">
@@ -428,7 +438,10 @@ h3.dt:first-child{margin-top:0}
 </dialog>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+let createClient=null;
+try{
+  ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.4"));
+}catch(e){ createClient=null; }
 
 /* ==================== 銘柄データ ==================== */
 const RAW = [
@@ -626,6 +639,71 @@ let cfg=(()=>{try{return JSON.parse(localStorage.getItem(CFGK))||null}catch(e){r
       ||(DEFAULT_URL?{url:DEFAULT_URL,key:DEFAULT_KEY}:null);
 let sb=null;
 
+/* ==================== 端末内の控え ==================== */
+const LS={
+  get(k,d){try{const v=localStorage.getItem("sakecho."+k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem("sakecho."+k,JSON.stringify(v));return true;}catch(e){return false;}},
+  del(k){try{localStorage.removeItem("sakecho."+k);}catch(e){}}
+};
+let ONLINE=navigator.onLine;
+let QUEUE=LS.get("queue",[]);
+function setOnline(v){
+  ONLINE=v;
+  document.body.classList.toggle("offline",!v);
+  document.getElementById("offbar").classList.toggle("on",!v);
+  if(v)flushQueue();
+}
+window.addEventListener("online",()=>setOnline(true));
+window.addEventListener("offline",()=>setOnline(false));
+
+function saveSnapshot(){
+  if(!G)return;
+  LS.set("snap."+G.id,{at:Date.now(),accounts:ACCOUNTS,entries:ENTRIES,
+    group:{id:G.id,name:G.name,role:G.role},me:ME,groups:GROUPS});
+}
+function loadSnapshot(gid){return LS.get("snap."+gid,null);}
+function queueAdd(op){
+  QUEUE.push(Object.assign({qid:"q"+Date.now()+Math.random().toString(36).slice(2,6)},op));
+  LS.set("queue",QUEUE);
+  updatePendBadge();
+}
+function pendingCount(){return QUEUE.length;}
+function updatePendBadge(){
+  const e=document.getElementById("sync");
+  if(!e)return;
+  const n=pendingCount();
+  e.textContent=n?("未送信 "+n+"件"):"";
+}
+async function flushQueue(){
+  if(!sb||!QUEUE.length||!navigator.onLine)return;
+  const rest=[];
+  for(const op of QUEUE){
+    try{
+      if(op.t==="update"){
+        const {error}=await sb.from(op.table).update(op.fields).eq("id",op.id);
+        if(error)throw error;
+      }else if(op.t==="insert"){
+        const {data,error}=await sb.from(op.table).insert(op.row).select().single();
+        if(error)throw error;
+        if(op.tmpId){
+          const i=ENTRIES.findIndex(x=>x.id===op.tmpId);
+          if(i>=0)ENTRIES[i]=data;
+          for(const q of QUEUE)if(q.id===op.tmpId)q.id=data.id;
+        }
+      }else if(op.t==="rpc"){
+        const {error}=await sb.rpc(op.fn,op.args);
+        if(error)throw error;
+      }
+    }catch(e){
+      const m=String(e&&e.message||"");
+      if(/Failed to fetch|NetworkError|network/i.test(m)){rest.push(op);}
+      else{console.warn("同期できなかった操作を破棄:",op,m);}
+    }
+  }
+  QUEUE=rest;LS.set("queue",QUEUE);updatePendBadge();
+  if(!QUEUE.length&&G){await loadEntries();saveSnapshot();sync("同期しました");render();}
+}
+
 /* ==================== 状態 ==================== */
 const ROLES={host:{lv:4,label:"ホスト"},admin:{lv:3,label:"管理"},staff:{lv:2,label:"従業員"},viewer:{lv:1,label:"閲覧のみ"}};
 let ME=null,GROUPS=[],G=null,ACCOUNTS=[],ENTRIES=[],MEMBERS=[],AUDIT=[],INVITE=null,authMode="login",ch=null;
@@ -649,12 +727,38 @@ const tokenFromUrl=(()=>{
 })();
 boot();
 async function boot(){
+  setOnline(navigator.onLine);
   if(!cfg||!cfg.url||!cfg.key){$("#connectPanel").hidden=false;return;}
-  sb=createClient(cfg.url,cfg.key);
-  const {data:{session}}=await sb.auth.getSession();
-  if(tokenFromUrl)await showInvite();
+  if(!createClient){
+    // 通信できずライブラリを読めなかった場合は、控えだけで動かす
+    if(startOffline())return;
+    $("#gate").hidden=false;$("#authPanel").hidden=false;
+    msg("#au_msg","オフラインのため接続できません。一度オンラインでログインすると、次からはオフラインでも開けます。");
+    return;
+  }
+  sb=createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true}});
+  let session=null;
+  try{ ({data:{session}}=await sb.auth.getSession()); }catch(e){}
+  if(tokenFromUrl&&navigator.onLine)await showInvite();
   if(session)afterAuth();
+  else if(!navigator.onLine&&startOffline())return;
   else{$("#authPanel").hidden=false;$("#au_email").focus();}
+}
+/* 控えからオフラインで起動する */
+function startOffline(){
+  const gid=localStorage.getItem("sakecho.lastgroup");
+  const snap=gid?loadSnapshot(gid):null;
+  if(!snap)return false;
+  ME=snap.me;GROUPS=snap.groups||[];G=snap.group;
+  ACCOUNTS=snap.accounts||[];ENTRIES=snap.entries||[];
+  state.acc=(ACCOUNTS[0]||{}).id||"";
+  $("#gate").hidden=true;$("#app").hidden=false;
+  $("#whoName").textContent=ME?ME.name:"";
+  $("#whoRole").textContent=G?ROLES[G.role].label:"";
+  buildGrpSel();buildAccSel();buildChips();buildSelects();render();
+  updatePendBadge();
+  sync("端末の控えを表示しています");
+  return true;
 }
 async function showInvite(){
   try{
@@ -717,7 +821,10 @@ async function afterAuth(){
 }
 async function loadGroups(){
   const {data,error}=await sb.from("memberships").select("group_id,role,groups(name)");
-  if(error){alert(errText(error));return;}
+  if(error){
+    if(startOffline())return;
+    alert(errText(error));return;
+  }
   GROUPS=(data||[]).map(m=>({id:m.group_id,role:m.role,name:m.groups?m.groups.name:"(不明)"}));
   if(!GROUPS.length){$("#gate").hidden=false;$("#authPanel").hidden=true;$("#groupPanel").hidden=false;return;}
   const last=localStorage.getItem("sakecho.lastgroup");
@@ -739,29 +846,49 @@ async function signOut(){await sb.auth.signOut();location.reload();}
 /* ==================== データ読み込み ==================== */
 async function openGroup(){
   localStorage.setItem("sakecho.lastgroup",G.id);
-  await Promise.all([loadAccounts(),loadEntries()]);
+  try{ await Promise.all([loadAccounts(),loadEntries()]); }
+  catch(e){ if(startOffline())return; alert(errText(e)); return; }
   if(!ACCOUNTS.length&&can.edit())await addAccount("個人用",true);
   state.acc=(ACCOUNTS[0]||{}).id||"";
   $("#gate").hidden=true;$("#app").hidden=false;
   $("#whoName").textContent=ME.name;$("#whoRole").textContent=ROLES[G.role].label;
-  buildGrpSel();buildAccSel();buildChips();buildSelects();subscribe();render();
+  buildGrpSel();buildAccSel();buildChips();buildSelects();
+  if(navigator.onLine)subscribe();
+  saveSnapshot();updatePendBadge();render();
+  flushQueue();
 }
 async function loadAccounts(){
-  const {data,error}=await sb.from("accounts").select("*").eq("group_id",G.id).is("deleted_at",null).order("created_at");
-  if(error){alert(errText(error));return;}
-  ACCOUNTS=data||[];
+  try{
+    const {data,error}=await sb.from("accounts").select("*").eq("group_id",G.id).is("deleted_at",null).order("created_at");
+    if(error)throw error;
+    ACCOUNTS=data||[];
+  }catch(e){
+    const s=loadSnapshot(G.id);
+    if(s){ACCOUNTS=s.accounts||[];sync("控えを表示しています");}
+    else throw e;
+  }
 }
 async function loadEntries(){
-  const {data,error}=await sb.from("entries").select("*").eq("group_id",G.id).is("deleted_at",null);
-  if(error){alert(errText(error));return;}
-  ENTRIES=data||[];
+  try{
+    const {data,error}=await sb.from("entries").select("*").eq("group_id",G.id).is("deleted_at",null);
+    if(error)throw error;
+    ENTRIES=data||[];
+  }catch(e){
+    const s=loadSnapshot(G.id);
+    if(s)ENTRIES=s.entries||[];
+    else throw e;
+  }
 }
 function subscribe(){
+  if(!sb)return;
   if(ch)sb.removeChannel(ch);
   ch=sb.channel("e-"+G.id)
     .on("postgres_changes",{event:"*",schema:"public",table:"entries",filter:"group_id=eq."+G.id},()=>{
       clearTimeout(subscribe._t);
-      subscribe._t=setTimeout(async()=>{await loadEntries();sync("最新に更新しました");render();},400);
+      subscribe._t=setTimeout(async()=>{
+        if(pendingCount())return;
+        await loadEntries();saveSnapshot();sync("最新に更新しました");render();
+      },400);
     }).subscribe();
 }
 
@@ -778,22 +905,55 @@ const qtyOf=it=>it.entry?Object.values(it.entry.qty||{}).reduce((a,b)=>a+(Number
 const accName=id=>{const a=ACCOUNTS.find(x=>x.id===id);return a?a.name:"";};
 
 /* ==================== 書き込み ==================== */
+const isTmp=id=>String(id).startsWith("tmp_");
 async function ensureEntry(it){
   if(it.entry)return it.entry;
-  const {data,error}=await sb.from("entries")
-    .insert({group_id:G.id,account_id:state.acc,ref:it.id,qty:{},menu:true}).select().single();
-  if(error){alert(errText(error));return null;}
-  ENTRIES.push(data);it.entry=data;return data;
+  const row={group_id:G.id,account_id:state.acc,ref:it.id,qty:{},menu:true};
+  if(!navigator.onLine||!sb){
+    const local=Object.assign({id:"tmp_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      photos:[],photo:null,cost:null,sell:null,par:null,loc:"",memo:""},row);
+    ENTRIES.push(local);it.entry=local;
+    queueAdd({t:"insert",table:"entries",row,tmpId:local.id});
+    saveSnapshot();return local;
+  }
+  const {data,error}=await sb.from("entries").insert(row).select().single();
+  if(error){
+    if(/Failed to fetch|NetworkError/i.test(error.message||"")){setOnline(false);return ensureEntry(it);}
+    alert(errText(error));return null;
+  }
+  ENTRIES.push(data);it.entry=data;saveSnapshot();return data;
 }
 async function patch(entry,fields){
+  // 画面はすぐ更新し、送信は後追い
+  Object.assign(entry,fields);
+  saveSnapshot();
+  if(!navigator.onLine||!sb||isTmp(entry.id)){
+    if(isTmp(entry.id)){
+      const op=QUEUE.find(q=>q.t==="insert"&&q.tmpId===entry.id);
+      if(op){Object.assign(op.row,fields);LS.set("queue",QUEUE);updatePendBadge();return entry;}
+    }
+    queueAdd({t:"update",table:"entries",id:entry.id,fields});
+    return entry;
+  }
   const {data,error}=await sb.from("entries").update(fields).eq("id",entry.id).select().single();
-  if(error){alert(errText(error));return null;}
-  Object.assign(entry,data);return data;
+  if(error){
+    if(/Failed to fetch|NetworkError/i.test(error.message||"")){
+      setOnline(false);queueAdd({t:"update",table:"entries",id:entry.id,fields});return entry;
+    }
+    alert(errText(error));return null;
+  }
+  Object.assign(entry,data);saveSnapshot();return data;
 }
 async function addAccount(name,silent){
+  if(!navigator.onLine||!sb){alert("アカウントの追加はオンラインのときに行ってください。");return null;}
   const {data,error}=await sb.from("accounts").insert({group_id:G.id,name}).select().single();
   if(error){if(!silent)alert(errText(error));return null;}
-  ACCOUNTS.push(data);return data;
+  ACCOUNTS.push(data);saveSnapshot();return data;
+}
+function needOnline(){
+  if(navigator.onLine&&sb)return true;
+  alert("この操作はオンラインのときに行ってください。在庫数・メモ・写真の変更はオフラインでも記録され、接続が戻ると自動で送信されます。");
+  return false;
 }
 
 /* ==================== 絞り込みUI ==================== */
@@ -999,6 +1159,11 @@ function bulkBar(){
 /* ==================== 履歴 ==================== */
 async function renderHistory(){
   $("#rail").hidden=true;$("#view").className="";
+  if(!navigator.onLine||!sb){
+    $("#view").innerHTML=`<div class="sec"><h2>操作の履歴</h2>
+      <p class="lead">履歴はオンラインのときだけ表示できます。${pendingCount()?`現在 ${pendingCount()} 件の変更が未送信です。接続が戻ると自動で送信されます。`:""}</p></div>`;
+    return;
+  }
   $("#view").innerHTML=`<p class="lead">読み込んでいます…</p>`;
   const {data,error}=await sb.from("audit").select("*").eq("group_id",G.id).order("at",{ascending:false}).limit(200);
   if(error){$("#view").innerHTML=`<p class="lead">${esc(errText(error))}</p>`;return;}
@@ -1020,6 +1185,18 @@ async function renderHistory(){
 /* ==================== 設定 ==================== */
 async function renderSettings(){
   $("#rail").hidden=true;$("#view").className="";
+  if(!navigator.onLine||!sb){
+    $("#view").innerHTML=`<div class="sec"><h2>グループ「${esc(G.name)}」</h2>
+      <p class="lead">あなたの権限：${ROLES[G.role].label}</p>
+      <div class="hint">いまはオフラインです。次の操作はオンラインに戻ってから行えます。<br>
+      ・招待リンクの発行　・メンバーの権限変更　・アカウントの追加や名称変更　・履歴の表示と復元<br><br>
+      在庫数の増減、メモ・保管場所の記入、写真の追加、銘柄の手入力での追加はいま行えます。
+      ${pendingCount()?`<br><br><b>未送信 ${pendingCount()} 件。</b>接続が戻ると自動で送信されます。`:""}</div></div>
+      <div class="sec"><h2>銘柄の追加</h2><div class="rowbtns">
+        ${can.edit()?`<button class="ghost" id="photobtn">写真から追加</button><button class="ghost" id="addbtn">手入力で追加</button>`:""}
+        <button class="ghost" id="installbtn">ホーム画面に追加</button></div></div>`;
+    bindSettings();return;
+  }
   const {data:ms}=await sb.from("memberships").select("user_id,role").eq("group_id",G.id);
   MEMBERS=ms||[];
   const ids=MEMBERS.map(m=>m.user_id);
@@ -1061,21 +1238,24 @@ async function renderSettings(){
 }
 function bindSettings(){
   const on=(id,fn)=>{const e=$("#"+id);if(e)e.addEventListener("click",fn);};
-  on("invbtn",()=>{$("#iv_out").hidden=true;$("#iv_btns").hidden=true;$("#dlgInvite").showModal();});
-  on("newgrp",async()=>{
+  on("invbtn",()=>{if(!needOnline())return;$("#iv_out").hidden=true;$("#iv_btns").hidden=true;$("#dlgInvite").showModal();});
+  on("newgrp",async()=>{if(!needOnline())return;
     const n=prompt("新しいグループ名（例：日の出茶屋）");if(!n||!n.trim())return;
     const {error}=await sb.rpc("create_group",{p_name:n.trim()});
     if(error)return alert(errText(error));
     await loadGroups();
   });
-  on("accadd",async()=>{
+  on("accadd",async()=>{if(!needOnline())return;
     const n=prompt("新しいアカウント名（例：店舗1）");if(!n||!n.trim())return;
     const a=await addAccount(n.trim());if(a){buildAccSel();render();}
   });
   on("photobtn",()=>$("#dlgPhoto").showModal());
   on("addbtn",()=>$("#dlgAdd").showModal());
   on("installbtn",()=>$("#dlgInstall").showModal());
-  on("reloadbtn",async()=>{await Promise.all([loadAccounts(),loadEntries()]);sync("更新しました");render();});
+  on("reloadbtn",async()=>{
+    if(!needOnline())return;
+    await flushQueue();
+    await Promise.all([loadAccounts(),loadEntries()]);saveSnapshot();sync("更新しました");render();});
   on("cfgbtn",()=>{if(confirm("接続先の設定を消して入力し直しますか？"))
     {localStorage.removeItem(CFGK);location.reload();}});
   on("outbtn2",signOut);
@@ -1145,12 +1325,14 @@ $("#view").addEventListener("click",async ev=>{
   const rs=t.dataset.restore;
   if(rs){
     if(!can.edit())return;
+    if(!needOnline())return;
     const {error}=await sb.rpc("restore_entry",{p_audit:Number(rs)});
     if(error)return alert(errText(error));
     await loadEntries();sync("復元しました");renderHistory();return;
   }
   const rn=t.dataset.rename;
   if(rn){
+    if(!needOnline())return;
     const a=ACCOUNTS.find(x=>x.id===rn);if(!a)return;
     const n=prompt("新しいアカウント名",a.name);if(!n||!n.trim())return;
     const {data,error}=await sb.from("accounts").update({name:n.trim()}).eq("id",rn).select().single();
@@ -1159,6 +1341,7 @@ $("#view").addEventListener("click",async ev=>{
   }
   const ad=t.dataset.accdel;
   if(ad){
+    if(!needOnline())return;
     const a=ACCOUNTS.find(x=>x.id===ad);if(!a)return;
     if(!confirm(`アカウント「${a.name}」を削除します。中の在庫も一覧から消えます（履歴には残ります）。`))return;
     const {error}=await sb.from("accounts").update({deleted_at:new Date().toISOString()}).eq("id",ad);
@@ -1169,6 +1352,7 @@ $("#view").addEventListener("click",async ev=>{
   }
   const ur=t.dataset.urole;
   if(ur){
+    if(!needOnline())return;
     const r=prompt("権限を入力してください（host／admin／staff／viewer）","staff");
     if(!r||!["host","admin","staff","viewer"].includes(r))return;
     const {error}=await sb.rpc("set_member_role",{p_group:G.id,p_user:ur,p_role:r});
@@ -1177,6 +1361,7 @@ $("#view").addEventListener("click",async ev=>{
   }
   const ud=t.dataset.udel;
   if(ud){
+    if(!needOnline())return;
     if(!confirm("このメンバーをグループから外します。よろしいですか？"))return;
     const {error}=await sb.rpc("remove_member",{p_group:G.id,p_user:ud});
     if(error)return alert(errText(error));
@@ -1212,6 +1397,7 @@ $("#bulkmove").addEventListener("click",()=>bulkMove(true));
 $("#bulkcopy").addEventListener("click",()=>bulkMove(false));
 async function bulkMove(move){
   if(!can.edit()||!state.sel.size)return;
+  if(!needOnline())return;
   const to=$("#bulkacc").value;
   if(!to)return alert("移動先のアカウントがありません。設定画面で追加してください。");
   const L=items();
@@ -1267,10 +1453,15 @@ $("#f_save").addEventListener("click",async()=>{
     seimai:Number(g("f_seimai"))||"—",sdo:g("f_sdo")||"—",
     ak:Math.min(10,Math.max(1,Number(g("f_ak"))||5)),pref:g("f_pref")||"—",kura:g("f_kura")||"—",
     prices,desc:g("f_desc"),rare:0};
-  const {data,error}=await sb.from("entries")
-    .insert({group_id:G.id,account_id:state.acc,ref:"custom",custom,qty:{},menu:true}).select().single();
-  if(error)return msg("#f_msg",errText(error));
-  ENTRIES.push(data);
+  const row={group_id:G.id,account_id:state.acc,ref:"custom",custom,qty:{},menu:true};
+  if(!navigator.onLine||!sb){
+    const local=Object.assign({id:"tmp_"+Date.now().toString(36),photos:[],photo:null},row);
+    ENTRIES.push(local);queueAdd({t:"insert",table:"entries",row,tmpId:local.id});saveSnapshot();
+  }else{
+    const {data,error}=await sb.from("entries").insert(row).select().single();
+    if(error)return msg("#f_msg",errText(error));
+    ENTRIES.push(data);saveSnapshot();
+  }
   ["f_name","f_kana","f_tags","f_seimai","f_sdo","f_ak","f_pref","f_kura","f_price","f_desc"].forEach(i=>$("#"+i).value="");
   $("#dlgAdd").close();buildSelects();
   state.tab="catalog";
@@ -1386,11 +1577,15 @@ $("#ph_grid").addEventListener("click",e=>{
 let ocrWorker=null;
 $("#ph_ocr").addEventListener("click",async()=>{
   if(!shots.length)return alert("先に写真を撮るか選んでください。");
+  if(!navigator.onLine&&!window.__ocrReady){
+    return alert("文字の読み取りは、初回のみオンラインで辞書を取得する必要があります。オフラインのときは、端末の文字認識でコピーした文字を下の欄に貼り付けてください。");
+  }
   const prog=$("#ph_prog");
   try{
     prog.textContent="読み取りの準備をしています（初回は辞書の取得に1〜2分かかります）…";
     if(!ocrWorker){
       const T=await import("https://esm.sh/tesseract.js@5.1.1");
+      window.__ocrReady=true;
       ocrWorker=await T.createWorker(["jpn","eng"],1,{
         logger:m=>{if(m.status==="recognizing text")prog.textContent="読み取り中… "+Math.round(m.progress*100)+"%";
                    else if(m.status)prog.textContent=m.status;}
@@ -1489,14 +1684,30 @@ $("#ph_save").addEventListener("click",async()=>{
     prices,desc:g("p_desc"),rare:0};
   const row={group_id:G.id,account_id:state.acc,ref:"custom",custom,qty:{},menu:true};
   if(shots.length){row.photos=shots.slice();row.photo=shots[0];}
-  const {data,error}=await sb.from("entries").insert(row).select().single();
-  if(error){out.hidden=false;out.textContent=errText(error);return;}
-  ENTRIES.push(data);
+  if(!navigator.onLine||!sb){
+    const local=Object.assign({id:"tmp_"+Date.now().toString(36)},row);
+    ENTRIES.push(local);queueAdd({t:"insert",table:"entries",row,tmpId:local.id});saveSnapshot();
+  }else{
+    const {data,error}=await sb.from("entries").insert(row).select().single();
+    if(error){out.hidden=false;out.textContent=errText(error);return;}
+    ENTRIES.push(data);saveSnapshot();
+  }
   out.hidden=false;out.textContent=`「${custom.name}」を追加しました`;
   shots=[];drawShots();$("#ph_text").value="";$("#ph_prog").textContent="";
   ["p_name","p_kana","p_tags","p_seimai","p_sdo","p_ak","p_pref","p_kura","p_price","p_desc"].forEach(i=>$("#"+i).value="");
   buildSelects();render();
 });
+
+/* ==================== オフライン対応（Service Worker） ==================== */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("./sw.js",{scope:"./"})
+    .then(r=>{ if(r.waiting)r.waiting.postMessage("skip"); })
+    .catch(()=>{});
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(reloaded)return;reloaded=true;
+  });
+}
 
 /* ==================== PWA ==================== */
 try{
