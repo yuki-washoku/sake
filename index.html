@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="酒帖">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -1711,11 +1714,14 @@ if("serviceWorker" in navigator){
 
 /* ==================== PWA ==================== */
 try{
-  const m={name:"酒帖",short_name:"酒帖",display:"standalone",background_color:"#101317",theme_color:"#101317",
-    start_url:location.origin+location.pathname,
-    icons:[{src:"data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#101317"/><text x="50%" y="58%" font-family="serif" font-size="300" fill="#EFE9DC" text-anchor="middle">酒</text></svg>`))),
-      sizes:"512x512",type:"image/svg+xml"}]};
+  const m={name:"酒帖",short_name:"酒帖",display:"standalone",
+    background_color:"#101317",theme_color:"#101317",
+    start_url:location.origin+location.pathname,scope:"./",
+    icons:[
+      {src:location.origin+location.pathname.replace(/[^/]*$/,"")+"icon-192.png",sizes:"192x192",type:"image/png",purpose:"any"},
+      {src:location.origin+location.pathname.replace(/[^/]*$/,"")+"icon-512.png",sizes:"512x512",type:"image/png",purpose:"any"},
+      {src:location.origin+location.pathname.replace(/[^/]*$/,"")+"icon-512.png",sizes:"512x512",type:"image/png",purpose:"maskable"}
+    ]};
   const l=document.createElement("link");l.rel="manifest";
   l.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));
   document.head.appendChild(l);

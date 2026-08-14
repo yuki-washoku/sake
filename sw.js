@@ -1,6 +1,6 @@
 /* 酒帖 — オフライン用 Service Worker */
-const C = "sakecho-v1";
-const CORE = ["./", "./index.html"];
+const C = "sakecho-v2";
+const CORE = ["./", "./index.html", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon-32.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(
