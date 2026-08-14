@@ -260,6 +260,7 @@ body.offline{padding-top:24px}
       <div class="field"><label>パスワード（8文字以上）</label><input id="au_pw" type="password" autocomplete="current-password"></div>
       <button class="primary" id="au_go">ログイン</button>
       <div class="msg" id="au_msg"></div>
+      <button class="ghost" id="au_off" style="width:100%;margin-top:9px" hidden>通信せずに前回の内容を開く</button>
       <p class="note" id="au_note">アカウントはメールアドレスごとに作られます。グループへの参加は、ホストが発行する招待リンクから行います。</p>
       <button class="txtbtn" id="cf_edit" style="margin-top:8px">接続先を変更する</button>
     </div>
@@ -656,15 +657,48 @@ function setOnline(v){
   document.getElementById("offbar").classList.toggle("on",!v);
   if(v)flushQueue();
 }
-window.addEventListener("online",()=>setOnline(true));
+window.addEventListener("online",async()=>{
+  setOnline(true);
+  try{
+    if(!sb&&createClient)initClientQuietly();
+    if(sb&&G){
+      if(!ME||!ME.id){
+        const r=await sb.auth.getSession();
+        const u=r&&r.data&&r.data.session?r.data.session.user:null;
+        if(u)ME={id:u.id,email:u.email,name:(u.user_metadata&&u.user_metadata.name)||u.email};
+      }
+      await flushQueue();
+      await loadEntries();saveSnapshot();subscribe();render();
+      sync("オンラインに戻りました");
+    }
+  }catch(e){}
+});
 window.addEventListener("offline",()=>setOnline(false));
 
 function saveSnapshot(){
   if(!G)return;
-  LS.set("snap."+G.id,{at:Date.now(),accounts:ACCOUNTS,entries:ENTRIES,
+  LS.set("snap."+G.id,{at:Date.now(),accounts:ACCOUNTS,entries:ENTRIES,acc:state.acc,
     group:{id:G.id,name:G.name,role:G.role},me:ME,groups:GROUPS});
 }
 function loadSnapshot(gid){return LS.get("snap."+gid,null);}
+/* 控えがある一番新しいグループを探す */
+function anySnapshot(){
+  const last=localStorage.getItem("sakecho.lastgroup");
+  let best=last?loadSnapshot(last):null;
+  if(best)return best;
+  let newest=null;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith("sakecho.snap.")){
+        const v=JSON.parse(localStorage.getItem(k));
+        if(v&&(!newest||(v.at||0)>(newest.at||0)))newest=v;
+      }
+    }
+  }catch(e){}
+  return newest;
+}
+function hasSnapshot(){return !!anySnapshot();}
 function queueAdd(op){
   QUEUE.push(Object.assign({qid:"q"+Date.now()+Math.random().toString(36).slice(2,6)},op));
   LS.set("queue",QUEUE);
@@ -732,37 +766,76 @@ boot();
 async function boot(){
   setOnline(navigator.onLine);
   if(!cfg||!cfg.url||!cfg.key){$("#connectPanel").hidden=false;return;}
-  if(!createClient){
-    // 通信できずライブラリを読めなかった場合は、控えだけで動かす
-    if(startOffline())return;
+
+  // 通信できないときは、まず手元の控えで開く
+  if(!navigator.onLine||!createClient){
+    if(startOffline()){
+      if(createClient)initClientQuietly();
+      return;
+    }
     $("#gate").hidden=false;$("#authPanel").hidden=false;
-    msg("#au_msg","オフラインのため接続できません。一度オンラインでログインすると、次からはオフラインでも開けます。");
+    $("#au_off").hidden=!hasSnapshot();
+    msg("#au_msg","オフラインです。一度オンラインでログインすると、次からは通信なしで開けます。");
+    if(createClient)initClientQuietly();
     return;
   }
+
   sb=createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true}});
+
+  // 通信が詰まっても待ち続けないよう、8秒で見切る
   let session=null;
-  try{ ({data:{session}}=await sb.auth.getSession()); }catch(e){}
+  try{
+    session=await Promise.race([
+      sb.auth.getSession().then(r=>r&&r.data?r.data.session:null),
+      new Promise(r=>setTimeout(()=>r("timeout"),8000))
+    ]);
+  }catch(e){}
+  if(session==="timeout"){
+    setOnline(false);
+    if(startOffline())return;
+    session=null;
+  }
+
   if(tokenFromUrl&&navigator.onLine)await showInvite();
-  if(session)afterAuth();
-  else if(!navigator.onLine&&startOffline())return;
-  else{$("#authPanel").hidden=false;$("#au_email").focus();}
+
+  if(session){ afterAuth(session); }
+  else if(startOffline()){ /* 期限切れなどでも控えで開く */ }
+  else{
+    $("#authPanel").hidden=false;
+    $("#au_off").hidden=!hasSnapshot();
+    $("#au_email").focus();
+  }
 }
+/* 画面を止めずに裏で接続だけ用意する */
+function initClientQuietly(){
+  if(sb||!createClient)return;
+  try{ sb=createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true}}); }catch(e){}
+}
+/* 手動でオフライン起動 */
+document.getElementById("au_off").addEventListener("click",()=>{
+  if(!startOffline())msg("#au_msg","この端末にはまだ控えがありません。一度オンラインでログインしてください。");
+});
+
 /* 控えからオフラインで起動する */
 function startOffline(){
-  const gid=localStorage.getItem("sakecho.lastgroup");
-  const snap=gid?loadSnapshot(gid):null;
-  if(!snap)return false;
-  ME=snap.me;GROUPS=snap.groups||[];G=snap.group;
-  ACCOUNTS=snap.accounts||[];ENTRIES=snap.entries||[];
-  state.acc=(ACCOUNTS[0]||{}).id||"";
+  const snap=anySnapshot();
+  if(!snap||!snap.group)return false;
+  ME=snap.me||{name:"",email:""};
+  GROUPS=snap.groups&&snap.groups.length?snap.groups:[snap.group];
+  G=snap.group;
+  ACCOUNTS=snap.accounts||[];
+  ENTRIES=snap.entries||[];
+  state.acc=snap.acc&&ACCOUNTS.some(a=>a.id===snap.acc)?snap.acc:((ACCOUNTS[0]||{}).id||"");
   $("#gate").hidden=true;$("#app").hidden=false;
-  $("#whoName").textContent=ME?ME.name:"";
-  $("#whoRole").textContent=G?ROLES[G.role].label:"";
+  $("#whoName").textContent=ME.name||"";
+  $("#whoRole").textContent=G.role?ROLES[G.role].label:"";
   buildGrpSel();buildAccSel();buildChips();buildSelects();render();
   updatePendBadge();
-  sync("端末の控えを表示しています");
+  const d=snap.at?new Date(snap.at).toLocaleString("ja-JP"):"";
+  sync(navigator.onLine?"控えを表示中":"オフライン："+d+" の内容");
   return true;
 }
+
 async function showInvite(){
   try{
     const {data,error}=await sb.rpc("invite_info",{p_token:tokenFromUrl});
@@ -806,12 +879,19 @@ async function doAuth(){
       const {error}=await sb.auth.signInWithPassword({email,password:pw});
       if(error)throw error;
     }
-    afterAuth();
+    const r=await sb.auth.getSession();
+    afterAuth(r&&r.data?r.data.session:null);
   }catch(e){msg("#au_msg",errText(e));}
 }
-async function afterAuth(){
-  const {data:{user}}=await sb.auth.getUser();
-  if(!user){$("#authPanel").hidden=false;return;}
+async function afterAuth(session){
+  let user=session&&session.user;
+  if(!user){
+    try{ const r=await sb.auth.getSession(); user=r&&r.data&&r.data.session?r.data.session.user:null; }catch(e){}
+  }
+  if(!user){
+    if(startOffline())return;
+    $("#authPanel").hidden=false;$("#au_off").hidden=!hasSnapshot();return;
+  }
   ME={id:user.id,email:user.email,name:(user.user_metadata&&user.user_metadata.name)||user.email};
   if(tokenFromUrl){
     try{
@@ -970,7 +1050,7 @@ function buildAccSel(){
 $("#grpsel").addEventListener("change",async e=>{
   G=GROUPS.find(g=>g.id===e.target.value);state.sel.clear();await openGroup();
 });
-$("#accsel").addEventListener("change",e=>{state.acc=e.target.value;state.sel.clear();buildAccSel();buildSelects();render();});
+$("#accsel").addEventListener("change",e=>{state.acc=e.target.value;state.sel.clear();buildAccSel();buildSelects();saveSnapshot();render();});
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
   state.tab=b.dataset.tab;state.sel.clear();
   document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-current",x===b));
